@@ -22,7 +22,7 @@ class game {
    public:
     board(point<int, 2> size) : grid_(size) {}
 
-    bool placeable(const player_index_t& stone,
+    bool placeable(const player_index_t& stone [[maybe_unused]],
                    const point<int, 2>&  coords) const {
       bool replacement = grid_[coords].has_value();
       return inside(grid_, coords) && not replacement;
