@@ -6,7 +6,7 @@
 
 #include "point.hpp"
 
-namespace mnk {
+namespace mnk::model {
 
 // Designed specifically for this project; not for general use.
 template <typename CellType>
@@ -63,4 +63,4 @@ point<int, 2> find_sequence_end(const grid<CellType>& grid,
   return end;
 }
 
-}  // namespace mnk
+}  // namespace mnk::model

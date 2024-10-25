@@ -14,7 +14,7 @@
 #include <ostream>
 #include <ranges>
 
-namespace mnk {
+namespace mnk::model {
 
 // Point in some n-dimensional vector space.
 template <typename ComponentType, size_t Dimension>
@@ -108,7 +108,7 @@ std::ostream& operator<<(std::ostream&                          ostream,
 template <typename ComponentType, size_t Dimension>
 point<ComponentType, Dimension> operator-(
     const point<ComponentType, Dimension>& point) {
-  auto result = mnk::point<ComponentType, Dimension>::make_origin();
+  auto result = model::point<ComponentType, Dimension>::make_origin();
   std::ranges::transform(point, result.begin(), std::negate<>{});
   return result;
 }
@@ -153,4 +153,4 @@ constexpr size_t norm(const point<ComponentType, Dimension>& vec) {
   }
 }
 
-}  // namespace mnk
+}  // namespace mnk::model

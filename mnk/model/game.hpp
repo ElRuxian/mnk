@@ -7,9 +7,7 @@
 
 #include "grid.hpp"
 
-namespace mnk {
-
-namespace model {
+namespace mnk::model {
 
 class game {
  public:
@@ -80,6 +78,8 @@ class game {
   };
   static_assert(std::is_aggregate_v<rules>);
 
+  struct prototypes;
+
  protected:
   board                 board_;
   rules                 rules_;
@@ -121,5 +121,4 @@ class game {
   }
 };
 
-}  // namespace model
-}  // namespace mnk
+}  // namespace mnk::model

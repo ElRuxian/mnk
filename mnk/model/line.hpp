@@ -7,7 +7,7 @@
 #include "grid.hpp"
 #include "point.hpp"
 
-namespace mnk {
+namespace mnk::model {
 
 template <class Point, typename ComponentType = Point::component_type,
           size_t Dimension = Point::dimension>
@@ -61,4 +61,4 @@ std::optional<line<typename Grid::point>> find_line(
   return {};
 }
 
-}  // namespace mnk
+}  // namespace mnk::model

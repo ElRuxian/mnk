@@ -2,14 +2,10 @@
 #include <csignal>
 #include <iostream>
 
-#include "mnk/game.hpp"
-#include "mnk/grid.hpp"
-#include "mnk/line.hpp"
-#include "mnk/point.hpp"
+#include "mnk/model/game.hpp"
+#include "mnk/model/line.hpp"
 
-namespace mnk {}  // namespace mnk
-
-using mnk::model::game;
+using namespace mnk::model;
 
 auto board = game::board{
     {7, 6}
@@ -19,7 +15,7 @@ auto rules = game::rules{
                 .legal_move =
             [](const game& game, const game::move& move) {
               const auto& grid = game.get_board().get_grid();
-              const auto& down = mnk::point<int, 2>{1, 0};
+              const auto& down = point<int, 2>{1, 0};
               return find_sequence_end(grid, move.coords, down) == move.coords;
             }, .win =
             [](const game& game, const game::move& move) {
@@ -77,10 +73,9 @@ void cli_game() {
       std::cout << "Invalid column!" << std::endl, sleep(1);
       continue;
     }
-    auto move =
-        game::move{thegame.get_current_player_index(),
-                   mnk::find_sequence_end(thegame.get_board().get_grid(),
-                                          {0, col}, {1, 0})};
+    auto move = game::move{
+        thegame.get_current_player_index(),
+        find_sequence_end(thegame.get_board().get_grid(), {0, col}, {1, 0})};
     if (thegame.validate(move))
       thegame.play(move);
     else
