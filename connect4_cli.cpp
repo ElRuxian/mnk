@@ -62,8 +62,10 @@ void cli_game() {
   }
   auto result = game.get_result().value();
   if (result.is_tie()) {
+    reprint_game();
     std::cout << "Tie!" << std::endl;
   } else {
+    reprint_game();
     std::cout << "Player " << result.get_winner() << " wins!" << std::endl;
   }
 }
@@ -73,6 +75,9 @@ int main() {
   std::signal(SIGINT, signal_handler);
   std::signal(SIGTERM, signal_handler);
   cli_game();
+  std::cout << "Press any key to exit...";
+  std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+  std::cin.get();
   restore_screen();
   return EXIT_SUCCESS;
 }
