@@ -31,8 +31,8 @@ class point {
   static constexpr point make_origin() { return point{}; }
 
   constexpr point(const point& other) noexcept = default;
-  constexpr point(point&& other) noexcept = default;
-  ~point() noexcept = default;
+  constexpr point(point&& other) noexcept      = default;
+  ~point() noexcept                            = default;
 
   template <typename... T>
     requires(sizeof...(T) == Dimension)
@@ -97,59 +97,56 @@ class point {
   }
 };
 
-template <typename ComponentType, size_t Dimension>
-std::ostream& operator<<(std::ostream&                          ostream,
-                         const point<ComponentType, Dimension>& point) {
+template <class T>
+concept Point =
+    std::same_as<T, point<typename T::component_type, T::dimension>>;
+
+template <Point Point>
+std::ostream& operator<<(std::ostream& ostream, const Point& point) {
   using std::views::take;
   ostream << '(';
-  for (const auto& comp : point | take(Dimension - 1)) {
+  for (const auto& comp : point | take(Point::dimension - 1)) {
     ostream << comp << ", ";
   }
-  ostream << point[Dimension - 1] << ')';
+  ostream << point[Point::dimension - 1] << ')';
   return ostream;
 }
 
-template <typename ComponentType, size_t Dimension>
-point<ComponentType, Dimension> operator-(
-    const point<ComponentType, Dimension>& point) {
-  auto result = model::point<ComponentType, Dimension>::make_origin();
+template <Point Point>
+Point operator-(const Point& point) {
+  auto result = Point::make_origin();
   std::ranges::transform(point, result.begin(), std::negate<>{});
   return result;
 }
 
-template <typename ComponentType, size_t Dimension>
-auto operator+(const point<ComponentType, Dimension>& lhs,
-               const point<ComponentType, Dimension>& rhs) {
+template <Point Point>
+auto operator+(const Point& lhs, const Point& rhs) {
   return auto(lhs) += rhs;
 }
 
-template <typename ComponentType, size_t Dimension>
-auto operator-(const point<ComponentType, Dimension>& lhs,
-               const point<ComponentType, Dimension>& rhs) {
+template <Point Point>
+auto operator-(const Point& lhs, const Point& rhs) {
   return auto(lhs) -= rhs;
 }
 
-template <typename ComponentType, size_t Dimension>
-auto operator*(const point<ComponentType, Dimension>& point,
-               const ComponentType&                   scalar) {
+template <Point Point, typename Scalar = Point::component_type>
+auto operator*(const Point& point, const Scalar& scalar) {
   return auto(point) *= scalar;
 }
 
-template <typename ComponentType, size_t Dimension>
-auto operator/(const point<ComponentType, Dimension>& point,
-               const ComponentType&                   scalar) {
+template <Point Point, typename Scalar = Point::component_type>
+auto operator/(const Point& point, const Scalar& scalar) {
   return auto(point) /= scalar;
 }
 
 enum class Metric { Euclidean, Chebyshev };
 // Enum-based dispatch for better use semantics.
-template <Metric metric, typename ComponentType, size_t Dimension>
-constexpr size_t norm(const point<ComponentType, Dimension>& vec) {
-  using enum Metric;
-  if constexpr (metric == Euclidean) {
-    static_assert(Dimension == 2 && "Implementation limited to 2D vectors");
+template <Metric Tag, Point Point>
+constexpr size_t norm(const Point& vec) {
+  if constexpr (Tag == Metric::Euclidean) {
+    static_assert(Point::dimension == 2 && "Implementation limited to 2D");
     return std::hypot(vec[0], vec[1]);
-  } else if constexpr (metric == Chebyshev) {
+  } else if constexpr (Tag == Metric::Chebyshev) {
     using std::ranges::max_element;
     return *max_element(vec);
   } else {
