@@ -30,8 +30,8 @@ class grid {
   grid(const point& size, CellType value = CellType())
       : size_(size), cells_(size_[0] * size_[1], value) {}
 
-  point get_size() const noexcept { return size_; }
-  int   get_cell_count() const noexcept { return cells_.size(); }
+  point  get_size() const noexcept { return size_; }
+  size_t get_cell_count() const noexcept { return cells_.size(); }
 
   // These declarations do not intend to guarantee any specific iteration order.
   decltype(auto) begin(this auto& self) noexcept { return self.cells_.begin(); }
