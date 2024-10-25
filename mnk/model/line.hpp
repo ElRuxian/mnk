@@ -15,6 +15,8 @@ class line {
   std::pair<Point, Point> endpoints_;
 
  public:
+  using point_type = Point;
+
   line(const Point& start, const Point& end) : endpoints_(start, end) {}
 
   // Order: start to end.
@@ -26,6 +28,9 @@ class line {
     return norm<M>(end - start);
   }
 };
+
+template <class T>
+concept Line = std::same_as<T, line<typename T::point_type>>;
 
 template <Grid Grid, class Point = Grid::point>
 std::optional<line<Point>> find_line(
