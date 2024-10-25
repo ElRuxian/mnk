@@ -2,6 +2,7 @@
 #include <unistd.h>
 
 #include <cassert>
+#include <concepts>
 #include <vector>
 
 #include "point.hpp"
@@ -43,8 +44,11 @@ class grid {
   }
 };
 
-template <typename CellType>
-bool inside(const grid<CellType>& grid, const point<int, 2>& coords) {
+template <class T>
+concept Grid = std::same_as<T, grid<typename T::cell_type>>;
+
+template <Grid Grid, class Point = Grid::point>
+bool inside(const Grid& grid, const Point& coords) {
   using std::views::zip;
   for (auto [coord, boundary] : zip(coords, grid.get_size())) {
     if (coord < 0 || coord >= boundary) return false;
@@ -52,12 +56,11 @@ bool inside(const grid<CellType>& grid, const point<int, 2>& coords) {
   return true;
 }
 
-template <typename CellType>
-point<int, 2> find_sequence_end(const grid<CellType>& grid,
-                                const point<int, 2>&  start,
-                                const point<int, 2>&  stride) {
+template <Grid Grid, class Point = Grid::point>
+Point find_sequence_end(const Grid& grid, const Point& start,
+                        const Point& stride) {
   assert(inside(grid, start));
-  point<int, 2> end = start;
+  Point end = start;
   for (auto i = start; inside(grid, i) && grid[i] == grid[start]; i += stride)
     end = i;
   return end;
