@@ -30,6 +30,10 @@ class point {
 
   static constexpr point make_origin() { return point{}; }
 
+  constexpr point(const point& other) noexcept = default;
+  constexpr point(point&& other) noexcept = default;
+  ~point() noexcept = default;
+
   template <typename... T>
     requires(sizeof...(T) == Dimension)
   constexpr point(T... args) : components_{args...} {}
