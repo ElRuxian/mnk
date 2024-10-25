@@ -148,7 +148,10 @@ constexpr size_t norm(const Point& vec) {
     return std::hypot(vec[0], vec[1]);
   } else if constexpr (Tag == Metric::Chebyshev) {
     using std::ranges::max_element;
-    return *max_element(vec);
+    using std::views::transform;
+    auto abs_values =
+        transform(vec, [](const auto& value) { return std::abs(value); });
+    return *max_element(abs_values);
   } else {
     static_assert(!"Incomplete implementation");
   }
