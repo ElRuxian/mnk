@@ -60,6 +60,8 @@ template <Grid Grid, class Point = Grid::point>
 Point find_sequence_end(const Grid& grid, const Point& start,
                         const Point& stride) {
   assert(inside(grid, start));
+  constexpr auto ilegal_stride = Point::make_origin();
+  assert(stride != ilegal_stride && "Infinite loop prevention");
   Point end = start;
   for (auto i = start; inside(grid, i) && grid[i] == grid[start]; i += stride)
     end = i;
