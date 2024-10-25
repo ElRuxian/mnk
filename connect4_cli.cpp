@@ -53,7 +53,8 @@ void cli_game() {
     }
     auto move = decltype(game)::move{
         game.get_current_player_index(),
-        find_sequence_end(game.get_board().get_grid(), {0, col}, {1, 0})};
+        find_equal_cell_sequence_end(game.get_board().get_grid(), {0, col},
+                                     {1, 0})};
     if (game.validate(move))
       game.play(move);
     else

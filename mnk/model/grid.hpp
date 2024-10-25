@@ -57,8 +57,8 @@ bool inside(const Grid& grid, const Point& coords) {
 }
 
 template <Grid Grid, class Point = Grid::point>
-Point find_sequence_end(const Grid& grid, const Point& start,
-                        const Point& stride) {
+Point find_equal_cell_sequence_end(const Grid& grid, const Point& start,
+                                   const Point& stride) {
   assert(inside(grid, start));
   constexpr auto ilegal_stride = Point::make_origin();
   assert(stride != ilegal_stride && "Infinite loop prevention");

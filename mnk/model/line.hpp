@@ -53,8 +53,8 @@ std::optional<line<Point>> find_line(
   };
 
   for (auto& direction : directions) {
-    line<Point> line = {find_sequence_end(grid, point, direction),
-                        find_sequence_end(grid, point, -direction)};
+    line<Point> line = {find_equal_cell_sequence_end(grid, point, direction),
+                        find_equal_cell_sequence_end(grid, point, -direction)};
     // +1 to account for starting point, in addition to offset of endpoints.
     auto line_covered_cell_count = length<Chebyshev>(line) + 1;
     if (line_covered_cell_count < min_cover) continue;
