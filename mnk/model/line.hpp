@@ -30,28 +30,30 @@ class line {
 template <Grid Grid, class Point = Grid::point>
 std::optional<line<Point>> find_line(
     const Grid& grid, const Point& point,
-    std::optional<size_t> min_length_ = std::nullopt,
-    std::optional<size_t> max_length_ = std::nullopt) {
+    std::optional<size_t> opt_covered_cell_count_minimum = std::nullopt,
+    std::optional<size_t> opt_covered_cell_count_maximum = std::nullopt) {
   using Metric::Chebyshev;
 
-  size_t min_possible_length = 0;
-  size_t max_possible_length = norm<Chebyshev>(grid.get_size());
-  size_t min_length          = min_length_.value_or(min_possible_length);
-  size_t max_length          = max_length_.value_or(max_possible_length);
+  size_t min_length = 0;
+  size_t max_length = norm<Chebyshev>(grid.get_size()) - 1;
+  // +1 to account for starting point, in addition to offset of endpoints.
+  size_t min_cover = opt_covered_cell_count_minimum.value_or(min_length + 1);
+  size_t max_cover = opt_covered_cell_count_maximum.value_or(max_length + 1);
 
   static constexpr auto directions = std::array<Point, 4>{
-      Point{-1, 1},
-      Point{0,  1},
-      Point{1,  0},
-      Point{1,  1},
+      Point{0,  1 }, // Horizontal
+      Point{-1, 1 },
+      Point{-1, 0 }, // Vertical
+      Point{-1, -1},
   };
 
   for (auto& direction : directions) {
-    line<Point> line        = {find_sequence_end(grid, point, direction),
-                               find_sequence_end(grid, point, -direction)};
-    auto        line_length = length<Chebyshev>(line);
-    if (line_length < min_length) continue;
-    if (line_length > max_length) continue;
+    line<Point> line = {find_sequence_end(grid, point, direction),
+                        find_sequence_end(grid, point, -direction)};
+    // +1 to account for starting point, in addition to offset of endpoints.
+    auto line_covered_cell_count = length<Chebyshev>(line) + 1;
+    if (line_covered_cell_count < min_cover) continue;
+    if (line_covered_cell_count > max_cover) continue;
     return line;
   }
   return {};
