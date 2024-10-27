@@ -20,15 +20,17 @@ class game {
     size_t                              stone_count_{0};
 
    public:
+    using grid = decltype(grid_);
+
     board(point<int, 2> size) : grid_(size) {}
 
     bool placeable(const player_index_t& stone [[maybe_unused]],
-                   const point<int, 2>&  coords) const {
+                   const grid::point&    coords) const {
       bool replacement = grid_[coords].has_value();
       return inside(grid_, coords) && not replacement;
     }
 
-    void place(player_index_t stone, const point<int, 2>& coords) {
+    void place(player_index_t stone, const grid::point& coords) {
       assert(placeable(stone, coords));
       grid_[coords] = stone;
       stone_count_++;
@@ -38,12 +40,12 @@ class game {
       return stone_count_ == grid_.get_cell_count();
     }
 
-    const auto& get_grid() const noexcept { return grid_; }
+    const grid& get_grid() const noexcept { return grid_; }
   };
 
   struct move {
-    player_index_t stone;
-    point<int, 2>  coords;
+    player_index_t     stone;
+    board::grid::point coords;
   };
 
   struct result {
