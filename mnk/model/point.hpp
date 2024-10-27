@@ -119,25 +119,18 @@ Point operator-(const Point& point) {
   return result;
 }
 
-template <Point Point>
-auto operator+(const Point& lhs, const Point& rhs) {
-  return auto(lhs) += rhs;
-}
-
-template <Point Point>
-auto operator-(const Point& lhs, const Point& rhs) {
-  return auto(lhs) -= rhs;
-}
-
-template <Point Point, typename Scalar = Point::component_type>
-auto operator*(const Point& point, const Scalar& scalar) {
-  return auto(point) *= scalar;
-}
-
-template <Point Point, typename Scalar = Point::component_type>
-auto operator/(const Point& point, const Scalar& scalar) {
-  return auto(point) /= scalar;
-}
+#define BINARY_OPERATOR(op)                                                  \
+  template <Point LHS, typename RHS>                                         \
+  [[nodiscard]] constexpr auto operator op(const LHS& lhs, const RHS& rhs) { \
+    return auto(lhs) op## = rhs;                                             \
+  }
+// Point-point
+BINARY_OPERATOR(+)
+BINARY_OPERATOR(-)
+// Point-scalar
+BINARY_OPERATOR(*)
+BINARY_OPERATOR(/)
+#undef BINARY_OPERATOR
 
 enum class Metric { Euclidean, Chebyshev };
 // Enum-based dispatch for better use semantics.
