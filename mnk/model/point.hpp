@@ -64,37 +64,25 @@ class point {
     return *this;
   }
 
-  auto& operator+=(const point& other) {
-    using std::plus;
-    using std::ranges::transform;
-    transform(components_, other.components_, components_.begin(), plus<>());
-    return *this;
+  // BAO: Binary Assignment Operator
+#define BAO(op, operand_type, transformation)                          \
+  point& operator op(const operand_type & operand) {                   \
+    using std::ranges::transform;                                      \
+    if constexpr (std::same_as<operand_type, point>) {                 \
+      transform(components_, operand.components_, components_.begin(), \
+                transformation<>());                                   \
+      return *this;                                                    \
+    } else if constexpr (std::same_as<operand_type, ComponentType>) {  \
+      transform(components_, components_.begin(),                      \
+                bind_front(transformation<>(), operand));              \
+      return *this;                                                    \
+    }                                                                  \
   }
-
-  auto& operator-=(const point& other) {
-    using std::minus;
-    using std::ranges::transform;
-    transform(components_, other.components_, components_.begin(), minus<>());
-    return *this;
-  }
-
-  auto& operator*=(const ComponentType& scalar) {
-    using std::bind_front;
-    using std::multiplies;
-    using std::ranges::transform;
-    transform(components_, components_.begin(),
-              bind_front(multiplies<>(), scalar));
-    return *this;
-  }
-
-  auto& operator/=(const ComponentType& scalar) {
-    using std::bind_front;
-    using std::multiplies;
-    using std::ranges::transform;
-    transform(components_, components_.begin(),
-              bind_front(multiplies<>(), scalar));
-    return *this;
-  }
+  BAO(+=, point, std::plus)
+  BAO(-=, point, std::minus)
+  BAO(*=, ComponentType, std::multiplies)
+  BAO(/=, ComponentType, std::divides)
+#undef BAO
 };
 
 template <class T>
@@ -124,10 +112,10 @@ Point operator-(const Point& point) {
   [[nodiscard]] constexpr auto operator op(const LHS& lhs, const RHS& rhs) { \
     return auto(lhs) op## = rhs;                                             \
   }
-// Point-point
+// point-point:
 BINARY_OPERATOR(+)
 BINARY_OPERATOR(-)
-// Point-scalar
+// point-scalar:
 BINARY_OPERATOR(*)
 BINARY_OPERATOR(/)
 #undef BINARY_OPERATOR
