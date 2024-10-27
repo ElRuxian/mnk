@@ -55,23 +55,23 @@ class point {
     swap(lhs.components_, rhs.components_);
   }
 
-  bool operator==(point<ComponentType, Dimension> other) const noexcept {
+  bool operator==(const point& other) const noexcept {
     return components_ == other.components_;
   }
 
-  auto& operator=(point<ComponentType, Dimension> other) {
+  auto& operator=(point other) {  // Copy-and-swap idiom
     swap(*this, other);
     return *this;
   }
 
-  auto& operator+=(const point<ComponentType, Dimension>& other) {
+  auto& operator+=(const point& other) {
     using std::plus;
     using std::ranges::transform;
     transform(components_, other.components_, components_.begin(), plus<>());
     return *this;
   }
 
-  auto& operator-=(const point<ComponentType, Dimension>& other) {
+  auto& operator-=(const point& other) {
     using std::minus;
     using std::ranges::transform;
     transform(components_, other.components_, components_.begin(), minus<>());
