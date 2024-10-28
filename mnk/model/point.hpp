@@ -100,6 +100,7 @@ std::ostream& operator<<(std::ostream& ostream, const Point& point) {
   return ostream;
 }
 
+// OPTIMIZE: Find a way to not initialize the result point.
 template <Point Point>
 Point operator-(const Point& point) {
   auto result = Point::make_origin();
