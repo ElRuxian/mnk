@@ -1,126 +1,97 @@
 #pragma once
 
 #include <cassert>
-#include <functional>
-#include <optional>
-#include <type_traits>
-
-#include "grid.hpp"
-
+#include <vector>
 namespace mnk::model {
 
+template <typename Action>
 class game {
- public:
-  static constexpr int max_players = 2;  // May break class if changed.
-  using player_index_t             = uint;
+public:
+        using action        = Action;
+        using player_indice = std::size_t;
 
-  class board {
-   private:
-    grid<std::optional<player_index_t>> grid_;
-    size_t                              stone_count_{0};
+private:
+        virtual std::vector<Action>
+        legal_actions_(player_indice player) const = 0;
 
-   public:
-    using grid = decltype(grid_);
+        virtual float
+        payoff_(player_indice player) const
+            = 0;
 
-    board(point<int, 2> size) : grid_(size) {}
+        virtual bool
+        is_playable_(player_indice player, const action &action) const
+        {
+                return is_legal_player(player)
+                       && legal_actions_(player).contains(action);
+        }
 
-    bool placeable(const player_index_t& stone [[maybe_unused]],
-                   const grid::point&    coords) const {
-      bool replacement = grid_[coords].has_value();
-      return inside(grid_, coords) && not replacement;
-    }
+        virtual void
+        play_(player_indice player, const action &action)
+            = 0;
 
-    void place(player_index_t stone, const grid::point& coords) {
-      assert(placeable(stone, coords));
-      grid_[coords] = stone;
-      stone_count_++;
-    }
+        virtual bool
+        is_over_() const
+        {
+                for (player_indice i = 0; i < initial_player_count_; ++i)
+                        if (!legal_actions_(i).empty())
+                                return false;
+                return true;
+        }
 
-    bool is_full() const noexcept {
-      return stone_count_ == grid_.get_cell_count();
-    }
+public:
+        virtual ~game() = default;
 
-    const grid& get_grid() const noexcept { return grid_; }
-  };
+        game(size_t player_count) : initial_player_count_(player_count)
+        {
+                assert(initial_player_count_ > 0);
+        }
 
-  struct move {
-    player_index_t     stone;
-    board::grid::point coords;
-  };
+        inline bool
+        is_legal_player(player_indice player) const
+        {
+                return player < initial_player_count_;
+        }
 
-  struct result {
-    std::optional<id_t>     winner;
-    static constexpr result make_tie() { return {}; }
-    static constexpr result make_win(id_t winner) { return {winner}; }
-    bool                    is_tie() const { return not winner.has_value(); }
-    bool                    is_win() const { return winner.has_value(); }
-    bool                    get_winner() const {
-      assert(is_win());
-      return winner.value();
-    }
-  };
+        inline float
+        payoff(player_indice player) const
+        {
+                assert(is_legal_player(player));
+                return payoff_(player);
+        }
 
-  struct rules {
-    // Strategy pattern allows customization of game logic
-    template <typename ReturnType>
-      requires std::is_convertible_v<ReturnType, bool>
-    using inspector =
-        std::function<ReturnType(const game& context, const move& inspected)>;
+        inline std::vector<Action> // factual until next play
+        legal_actions(player_indice player) const
+        {
+                assert(is_legal_player(player));
+                auto actions = legal_actions_(player);
+                assert(!is_over() || actions.empty());
+                return actions;
+        }
 
-    struct {
-      // NOTE: non-customizable game logic is ensured outside here; viz.:
-      // * legal moves cannot refer to positions outside the board;
-      // * legal moves cannot place stones on top of existing ones,
-      // * if the board is full, the game is over;
-      // * if both win and tie inspections are true, win takes precedence.
-      inspector<bool> legal_move;  // "Does current game-state allow this move?"
-      inspector<bool> win;         // "Would this move win the game?"
-      inspector<bool> tie;         // "Would this move tie the game?"
-    } inspectors;
-  };
-  static_assert(std::is_aggregate_v<rules>);
+        bool
+        is_playable(player_indice player, const action &action) const
+        {
+                bool playable = is_playable_(player, action);
+                assert(playable == game::is_playable_(player, action));
+                return playable;
+        }
 
-  struct prototypes;
+        inline void
+        play(player_indice player, const action &action)
+        {
+                assert(is_playable(player, action));
+                play_(player, action);
+        }
 
- protected:
-  board                 board_;
-  rules                 rules_;
-  std::optional<result> result_;
-  uint                  turn_;
-  std::optional<move>   last_move_;
+        virtual bool
+        is_over() const
+        {
+                bool over = is_over_();
+                assert(over == game::is_over_());
+                return over;
+        }
 
- public:
-  game(board board, rules rules) : board_(board), rules_(rules) {}
-  game(const game& other) = default;
-  game(game&& other)      = default;
-  ~game()                 = default;
-
-  const auto& get_board() const noexcept { return board_; }
-  auto get_current_player_index() const noexcept { return turn_ % max_players; }
-  const auto&                get_turn() const noexcept { return turn_; }
-  const auto&                get_result() const noexcept { return result_; }
-  const std::optional<move>& get_last_move() const noexcept {
-    return last_move_;
-  }
-
-  bool is_finished() const noexcept { return get_result().has_value(); }
-
-  bool validate(const move& move) const noexcept {
-    return board_.placeable(move.stone, move.coords) &&
-           rules_.inspectors.legal_move(*this, move);
-  };
-
-  void play(const move& move) {
-    assert(validate(move));
-    board_.place(move.stone, move.coords);
-    turn_++;
-    last_move_ = move;
-    if (rules_.inspectors.win(*this, move)) {
-      result_ = result::make_win(move.stone);
-    } else if (rules_.inspectors.tie(*this, move) || board_.is_full()) {
-      result_ = result::make_tie();
-    }
-  }
+protected:
+        std::size_t initial_player_count_;
 };
-
-}  // namespace mnk::model
+}; // namespace mnk::model
