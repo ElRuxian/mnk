@@ -1,71 +1,97 @@
 #pragma once
+#include <type_traits>
 #include <unistd.h>
 
 #include <cassert>
-#include <concepts>
 #include <vector>
 
 #include "point.hpp"
 
 namespace mnk::model {
 
-// Designed specifically for this project; not for general use.
-template <typename CellType>
+template <typename Cell>
 class grid {
- public:
-  using point = point<int, 2>;
-  typedef CellType cell_type;
+public:
+        using position = point<int, 2>;
+        typedef Cell cell;
 
- private:
-  point                 size_;
-  std::vector<CellType> cells_;
+private:
+        position          size_;
+        std::vector<Cell> cells_;
 
-  inline constexpr size_t index(const point& coords) const noexcept {
-    // Row-major order coordinate flattening.
-    return coords[0] * get_size()[1] + coords[1];
-  }
+        inline constexpr size_t
+        index_(const position &coords) const noexcept
+        {
+                // Row-major order coordinate flattening.
+                return coords[0] * get_size()[1] + coords[1];
+        }
 
- public:
-  grid() = default;
+public:
+        grid() = default;
 
-  grid(const point& size, CellType value = CellType())
-      : size_(size), cells_(size_[0] * size_[1], value) {}
+        grid(const position &size, Cell value = Cell()) :
+                size_(size), cells_(size_[0] * size_[1], value)
+        {
+        }
 
-  point  get_size() const noexcept { return size_; }
-  size_t get_cell_count() const noexcept { return cells_.size(); }
+        position
+        get_size() const noexcept
+        {
+                return size_;
+        }
 
-  // These declarations do not intend to guarantee any specific iteration order.
-  decltype(auto) begin(this auto& self) noexcept { return self.cells_.begin(); }
-  decltype(auto) end(this auto& self) noexcept { return self.cells_.end(); }
+        size_t
+        get_cell_count() const noexcept
+        {
+                return cells_.size();
+        }
 
-  inline decltype(auto) operator[](this auto&& self, const point& coords) {
-    assert(inside(self, coords));
-    return self.cells_[self.index(coords)];
-  }
+        // Unspecified iteration order.
+        decltype(auto) begin(this auto &self) noexcept
+        {
+                return self.cells_.begin();
+        }
+        decltype(auto) end(this auto &self) noexcept
+        {
+                return self.cells_.end();
+        }
+
+        inline decltype(auto) operator[](this auto     &&self,
+                                         const position &coords)
+        {
+                assert(within(self, coords));
+                return self.cells_[self.index_(coords)];
+        }
 };
 
-template <class T>
-concept Grid = std::same_as<T, grid<typename T::cell_type>>;
+template <typename T>
+concept grid_c = std::same_as<T, grid<typename T::cell> >;
 
-template <Grid Grid, class Point = Grid::point>
-bool inside(const Grid& grid, const Point& coords) {
-  using std::views::zip;
-  for (auto [coord, boundary] : zip(coords, grid.get_size())) {
-    if (coord < 0 || coord >= boundary) return false;
-  }
-  return true;
+template <grid_c Grid>
+bool
+within(const Grid &grid, const typename Grid::position &position)
+{
+        using std::views::zip;
+        for (auto [coord, boundary] : zip(position, grid.get_size()))
+                if (coord < 0 || coord >= boundary)
+                        return false;
+        return true;
 }
 
-template <Grid Grid, class Point = Grid::point>
-Point find_equal_cell_sequence_end(const Grid& grid, const Point& start,
-                                   const Point& stride) {
-  assert(inside(grid, start));
-  constexpr auto ilegal_stride = Point::make_origin();
-  assert(stride != ilegal_stride && "Infinite loop prevention");
-  Point end = start;
-  for (auto i = start; inside(grid, i) && grid[i] == grid[start]; i += stride)
-    end = i;
-  return end;
+template <grid_c Grid>
+Grid::position
+find_equal_cell_sequence_end(const Grid                    &grid,
+                             const typename Grid::position &start,
+                             const typename Grid::position &stride)
+{
+        assert(within(grid, start));
+        assert(stride != decltype(stride)::make_origin()
+               && "Infinite loop prevention");
+        auto end = start;
+        for (auto i = start; within(grid, i) && grid[i] == grid[start];
+             i += stride)
+                end = i;
+        return end;
 }
 
-}  // namespace mnk::model
+} // namespace mnk::model

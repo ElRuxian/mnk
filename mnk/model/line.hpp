@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstddef>
 #include <optional>
 #include <utility>
 
@@ -9,59 +8,58 @@
 
 namespace mnk::model {
 
-template <Point Point>
+template <point_c Point>
 class line {
- private:
-  std::pair<Point, Point> endpoints_;
+private:
+        std::pair<Point, Point> endpoints_;
 
- public:
-  using point_type = Point;
+public:
+        using point = Point;
 
-  line(const Point& start, const Point& end) : endpoints_(start, end) {}
+        line(const Point &x, const Point &y) : endpoints_(x, y) {}
 
-  // Order: start to end.
-  const auto& get_endpoints() const { return endpoints_; }
-
-  template <Metric M>
-  friend auto length(const line& line) {
-    const auto& [start, end] = line.endpoints_;
-    return norm<M>(end - start);
-  }
+        const auto &
+        endpoints() const
+        {
+                return endpoints_;
+        }
 };
 
-template <class T>
-concept Line = std::same_as<T, line<typename T::point_type>>;
+template <typename T>
+concept line_c = std::same_as<T, line<typename T::point> >;
 
-template <Grid Grid, class Point = Grid::point>
-std::optional<line<Point>> find_line(
-    const Grid& grid, const Point& point,
-    std::optional<size_t> opt_covered_cell_count_minimum = std::nullopt,
-    std::optional<size_t> opt_covered_cell_count_maximum = std::nullopt) {
-  using Metric::Chebyshev;
-
-  size_t min_length = 0;
-  size_t max_length = norm<Chebyshev>(grid.get_size()) - 1;
-  // +1 to account for starting point, in addition to offset of endpoints.
-  size_t min_cover = opt_covered_cell_count_minimum.value_or(min_length + 1);
-  size_t max_cover = opt_covered_cell_count_maximum.value_or(max_length + 1);
-
-  static constexpr auto directions = std::array<Point, 4>{
-      Point{0,  1 }, // Horizontal
-      Point{-1, 1 },
-      Point{-1, 0 }, // Vertical
-      Point{-1, -1},
-  };
-
-  for (auto& direction : directions) {
-    line<Point> line = {find_equal_cell_sequence_end(grid, point, direction),
-                        find_equal_cell_sequence_end(grid, point, -direction)};
-    // +1 to account for starting point, in addition to offset of endpoints.
-    auto line_covered_cell_count = length<Chebyshev>(line) + 1;
-    if (line_covered_cell_count < min_cover) continue;
-    if (line_covered_cell_count > max_cover) continue;
-    return line;
-  }
-  return {};
+template <Metric Metric>
+auto
+length(const line_c auto &line)
+{
+        const auto &[x, y] = line.endpoints();
+        return norm<Metric>(y - x);
 }
 
-}  // namespace mnk::model
+template <grid_c Grid>
+std::optional<line<typename Grid::position> >
+find_line(const Grid &grid, const typename Grid::position &point)
+{
+        auto find_end = [&](const auto &stride) {
+                auto end = point;
+                auto it  = point + stride;
+                while (within(grid, it) && grid[it] == grid[point]) {
+                        end = it;
+                        it += stride;
+                }
+                return end;
+        };
+
+        auto directions = std::array{
+                decltype(point){ 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 }
+        };
+
+        for (auto &&dir : directions) {
+                line<decltype(point)> line = { find_end(dir), find_end(-dir) };
+                if (length<Metric::Chebyshev>(line) > 0)
+                        return line;
+        }
+        return std::nullopt;
+}
+
+} // namespace mnk::model

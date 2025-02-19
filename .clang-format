@@ -15,3 +15,7 @@ AlignConsecutiveAssignments: true
 FixNamespaceComments: true
 AlignConsecutiveDeclarations: true
 SpaceBeforeParens: ControlStatements
+BreakBeforeConceptDeclarations: Always
+BreakConstructorInitializers: AfterColon
+BinPackArguments: false
+ConstructorInitializerIndentWidth: 8
