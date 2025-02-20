@@ -117,16 +117,20 @@ template <typename T, class T_ = std::remove_cvref_t<T> >
 concept point_c
     = std::is_same_v<T_, point<typename T_::component, T_::dimension> >;
 
-std::ostream &
-operator<<(std::ostream &ostream, const point_c auto &point)
+template <std::size_t I, mnk::model::point_c Point>
+auto &
+get(Point &point)
 {
-        using std::views::take;
-        ostream << '(';
-        for (const auto &comp : point | take(point.dimension - 1)) {
-                ostream << comp << ", ";
-        }
-        ostream << point[point.dimension - 1] << ')';
-        return ostream;
+        static_assert(I < Point::dimension, "Index out of bounds for Point");
+        return point[I];
+}
+
+template <std::size_t I, mnk::model::point_c Point>
+const auto &
+get(const Point &point)
+{
+        static_assert(I < Point::dimension, "Index out of bounds for Point");
+        return point[I];
 }
 
 auto
@@ -184,4 +188,17 @@ norm(const point_c auto &point)
                 static_assert(!"incomplete implementation");
         }
 }
+
 } // namespace mnk::model
+
+namespace std {
+
+template <mnk::model::point_c Point>
+struct tuple_size<Point> : integral_constant<std::size_t, Point::dimension> {};
+
+template <std::size_t I, mnk::model::point_c Point>
+struct tuple_element<I, Point> {
+        using type = typename Point::component;
+};
+
+} // namespace std
