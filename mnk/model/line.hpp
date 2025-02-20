@@ -40,6 +40,8 @@ template <grid_c Grid>
 std::optional<line<typename Grid::position> >
 find_line(const Grid &grid, const typename Grid::position &point)
 {
+        using point_t = std::decay_t<decltype(point)>;
+
         auto find_end = [&](const auto &stride) {
                 auto end = point;
                 auto it  = point + stride;
@@ -50,12 +52,11 @@ find_line(const Grid &grid, const typename Grid::position &point)
                 return end;
         };
 
-        auto directions = std::array{
-                decltype(point){ 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 }
-        };
+        auto directions = std::to_array<point_t>(
+            { { 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 } });
 
         for (auto &&dir : directions) {
-                line<decltype(point)> line = { find_end(dir), find_end(-dir) };
+                line<point_t> line = { find_end(dir), find_end(-dir) };
                 if (length<Metric::Chebyshev>(line) > 0)
                         return line;
         }
