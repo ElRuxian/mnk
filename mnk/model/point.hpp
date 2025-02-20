@@ -113,9 +113,9 @@ public:
 #undef BINARY_ASSIGNMENT_OPERATOR
 };
 
-template <class T>
+template <typename T, class T_ = std::remove_cvref_t<T> >
 concept point_c
-    = std::is_same_v<T, point<typename T::component, T::dimension> >;
+    = std::is_same_v<T_, point<typename T_::component, T_::dimension> >;
 
 std::ostream &
 operator<<(std::ostream &ostream, const point_c auto &point)

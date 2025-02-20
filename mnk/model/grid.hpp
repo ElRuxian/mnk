@@ -64,8 +64,8 @@ public:
         }
 };
 
-template <typename T>
-concept grid_c = std::same_as<T, grid<typename T::cell> >;
+template <typename T, class T_ = std::remove_cvref_t<T> >
+concept grid_c = std::same_as<T_, grid<typename T_::cell> >;
 
 template <grid_c Grid>
 bool

@@ -25,8 +25,8 @@ public:
         }
 };
 
-template <typename T>
-concept line_c = std::same_as<T, line<typename T::point> >;
+template <typename T, class T_ = std::remove_cvref_t<T> >
+concept line_c = std::same_as<T_, line<typename T_::point> >;
 
 template <Metric Metric>
 auto
