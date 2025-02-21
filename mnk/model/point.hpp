@@ -43,6 +43,13 @@ public:
 
         // clang-format on
 
+        template <typename Range>
+        explicit point(Range &&range)
+        {
+                assert(std::size(range) == Dimension);
+                std::ranges::copy(range, components_.begin());
+        }
+
         constexpr
         point(const point &other) noexcept
             = default;
@@ -136,10 +143,10 @@ get(const Point &point)
 auto
 operator-(const point_c auto &point)
 {
-        // OPTIMIZE: Unnecesary zero-initialization.
-        auto result = decltype(point)();
-        std::ranges::transform(point, result.begin(), std::negate<>{});
-        return result;
+        using point_t = std::remove_cvref_t<decltype(point)>;
+        using namespace std::ranges;
+
+        return point | views::transform(std::negate<>{}) | to<point_t>();
 }
 
 #define BINARY_OPERATOR(op)                                                    \
