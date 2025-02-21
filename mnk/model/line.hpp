@@ -1,7 +1,7 @@
 #pragma once
 
+#include <array>
 #include <optional>
-#include <utility>
 
 #include "grid.hpp"
 #include "point.hpp"
@@ -11,12 +11,12 @@ namespace mnk::model {
 template <point_c Point>
 class line {
 private:
-        std::pair<Point, Point> endpoints_;
+        std::array<Point, 2> endpoints_;
 
 public:
         using point = Point;
 
-        line(const Point &x, const Point &y) : endpoints_(x, y) {}
+        line(const Point &x, const Point &y) : endpoints_{ x, y } {}
 
         const auto &
         endpoints() const
