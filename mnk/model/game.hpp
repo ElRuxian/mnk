@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <vector>
 namespace mnk::model {
@@ -21,8 +22,9 @@ private:
         virtual bool
         is_playable_(player_indice player, const action &action) const
         {
+                using std::ranges::contains;
                 return is_legal_player(player)
-                       && legal_actions_(player).contains(action);
+                       && contains(legal_actions_(player), action);
         }
 
         virtual void
