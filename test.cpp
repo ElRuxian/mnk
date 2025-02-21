@@ -1,5 +1,6 @@
 #include <csignal>
 #include <iostream>
+#include <print>
 
 #include "mnk/model/mnk.hpp"
 
@@ -58,22 +59,24 @@ cli_game()
                 auto player = game.get_player();
 
                 decltype(game)::board::position pos;
+
                 std::cout << "Row: ", std::cin >> pos[0];
-                std::cout << "Column: ", std::cin >> pos[1];
+                std::cout << "Column: ", std::cin >> pos[1], std::cout << "\n";
 
                 if (game.is_playable(player, pos))
                         game.play(player, pos);
                 else
-                        std::cout << "Invalid move!" << std::endl, sleep(1);
+                        std::println("Invalid move!"), sleep(1);
         }
+        reprint_game();
         auto result = game.get_result();
         bool tie    = std::holds_alternative<decltype(game)::tie>(result);
         if (tie)
-                std::cout << "Tie!" << std::endl;
+                std::println("Tie!");
         else {
-                auto win = std::get<decltype(game)::win>(result);
-                std::cout << "Player " << win.player << " wins!" << '\n'
-                          << "Line: " << win.line << std::endl;
+                auto win = get<decltype(game)::win>(result);
+                std::println("Player {} wins!", win.player);
+                std::println("Line: {}", win.line);
         }
 }
 
@@ -84,7 +87,7 @@ main()
         std::signal(SIGINT, signal_handler);
         std::signal(SIGTERM, signal_handler);
         cli_game();
-        std::cout << "Press any key to exit...";
+        std::cout << "\nPress any key to exit...";
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         std::cin.get();
         restore_screen();

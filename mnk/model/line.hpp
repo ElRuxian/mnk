@@ -2,6 +2,7 @@
 
 #include <array>
 #include <optional>
+#include <type_traits>
 
 #include "grid.hpp"
 #include "point.hpp"
@@ -27,6 +28,12 @@ public:
 
 template <typename T, class T_ = std::remove_cvref_t<T> >
 concept line_c = std::same_as<T_, line<typename T_::point> >;
+
+std::ostream &
+operator<<(std::ostream &ostream, const line_c auto &line)
+{
+        return ostream << std::format("{}", range_formatter(line.endpoints()));
+}
 
 template <Metric Metric>
 auto
@@ -64,3 +71,19 @@ find_line(const Grid &grid, const typename Grid::position &point)
 }
 
 } // namespace mnk::model
+
+template <mnk::model::line_c Line, typename CharT>
+struct std::formatter<Line, CharT> : std::formatter<CharT> {
+
+        template <typename Context>
+        auto
+        format(const Line &line, Context &ctx) const
+        {
+                const auto &endpoints = line.endpoints();
+
+                using endpoints_t = std::decay_t<decltype(endpoints)>;
+                using formatter   = std::formatter<endpoints_t, CharT>;
+
+                return formatter::format(endpoints, ctx);
+        }
+};

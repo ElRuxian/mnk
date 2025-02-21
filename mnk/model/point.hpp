@@ -15,6 +15,8 @@
 #include <ranges>
 #include <type_traits>
 
+#include "range_formatter.hpp"
+
 namespace mnk::model {
 
 template <typename Component, size_t Dimension> // clang-format off
@@ -167,13 +169,7 @@ BINARY_OPERATOR(/)
 std::ostream &
 operator<<(std::ostream &ostream, const point_c auto &point)
 {
-        using std::views::take;
-        ostream << '(';
-        for (const auto &comp : point | take(point.dimension - 1)) {
-                ostream << comp << ", ";
-        }
-        ostream << point[point.dimension - 1] << ')';
-        return ostream;
+        return ostream << std::format("({})", range_formatter(point));
 }
 
 enum class Metric { Euclidean, Chebyshev };
