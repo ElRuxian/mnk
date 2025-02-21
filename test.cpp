@@ -71,8 +71,9 @@ cli_game()
         if (tie)
                 std::cout << "Tie!" << std::endl;
         else {
-                auto winner = std::get<decltype(game)::win>(result).player;
-                std::cout << "Player " << winner << " wins!" << std::endl;
+                auto win = std::get<decltype(game)::win>(result);
+                std::cout << "Player " << win.player << " wins!" << '\n'
+                          << "Line: " << win.line << std::endl;
         }
 }
 
