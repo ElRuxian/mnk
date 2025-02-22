@@ -11,6 +11,8 @@ endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+find_package(SFML 2.5 COMPONENTS system window graphics network audio REQUIRED)
+
 include_directories(src)
 
 file(GLOB_RECURSE SOURCES src/*.cpp)
@@ -21,6 +23,9 @@ foreach(source_file ${SOURCES})
     if (CONTENTS MATCHES "main\\s*\\(")
         get_filename_component(name ${source_file} NAME_WE)
         add_executable(${name} ${source_file})
+        if (CONTENTS MATCHES "#include <SFML/")
+            target_link_libraries(${name} PRIVATE sfml-system sfml-window sfml-graphics sfml-audio sfml-network)
+        endif()
         list(APPEND EXECUTABLES ${name})
     endif()
 endforeach()
