@@ -80,7 +80,7 @@ private:
                 bool empty
                     = within(board_, position) && !board_[position].has_value();
 
-                auto const filter = settings_.play_filter.get();
+                auto const filter = play_filter_.get();
 
                 bool allowed
                     = !filter || filter->allowed(*this, player, position);
@@ -115,7 +115,7 @@ public:
                 size_t                       line_span    = 3;
                 bool                         overline     = true;
                 std::unique_ptr<play_filter> play_filter  = nullptr;
-        } settings_;
+        };
 
         game(settings &&settings) :
                 ::mnkg::game<action>(settings.player_count),
