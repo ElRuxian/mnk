@@ -3,6 +3,7 @@
 #include "mnk/board.hpp"
 #include "mnk/game.hpp"
 #include <cassert>
+#include <print>
 
 namespace mnkg::mnk::filters {
 
@@ -18,17 +19,16 @@ public:
         void
         set_direction(board::position direction)
         {
-                assert(norm<Metric::Chebyshev>(direction_) == 1);
+                assert(norm<Metric::Chebyshev>(direction) == 1);
                 direction_ = direction;
         }
 
         board::position
         fall_from(const board &board, board::position pos) const
         {
-                // TODO: DRY: similar to `find_end` in 'find_line'
                 auto end = pos;
                 auto it  = pos + direction_;
-                while (within(board, it) && board[it] == board[pos]) {
+                while (within(board, it) && !board[it].has_value()) {
                         end = it;
                         it += direction_;
                 }
