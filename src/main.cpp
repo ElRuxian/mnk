@@ -3,12 +3,12 @@
 #include <print>
 
 #include "mnk/game.hpp"
-
-auto game = mnkg::mnk::game{};
+#include "mnk/presets.hpp"
+using namespace mnkg::mnk;
 
 template <class Stream>
 requires std::is_base_of_v<std::basic_ios<char>, Stream> std::ostream &
-operator<<(Stream &stream, const decltype(game)::board &board)
+operator<<(Stream &stream, const board &board)
 {
         const auto &[x, y] = board.get_size();
         for (int i = 0; i < x; ++i) {
@@ -42,23 +42,47 @@ signal_handler(int signal)
 }
 
 void
-reprint_game()
+reprint_game(const auto &game, const auto &title)
 {
         std::cout << "\033[2J";   // Clear the entire screen
         std::cout << "\033[1;1H"; // Move the cursor back to the top-left
-        std::cout << "Tic-Tac-Toe!\n";
+        std::cout << title << "!\n";
         std::cout << game.get_board() << std::endl;
 }
 
 void
 cli_game()
 {
+        struct game_option {
+                std::string title;
+                game::settings (*settings)();
+        };
+        auto game_options = std::to_array<game_option>(
+            { { "Tic-Tac-Toe", presets::tic_tac_toe },
+              { "Connect Four", presets::connect_four },
+              { "Gomoku", presets::gomoku } });
+
+        std::optional<game> chosen_game = std::nullopt;
+        std::println("SELECT GAME");
+        for (size_t i = 0; i < game_options.size(); ++i)
+                std::println("{}. {}", i + 1, game_options[i].title);
+        size_t chosen_game_indice;
+        while (not chosen_game.has_value()) {
+                std::cin >> chosen_game_indice;
+                if (chosen_game_indice <= game_options.size())
+                        chosen_game.emplace(
+                            game_options[chosen_game_indice - 1].settings());
+                else
+                        std::println("Invalid choice!");
+        }
+        auto &game = chosen_game.value();
         while (not game.is_over()) {
-                reprint_game();
+
+                reprint_game(game, game_options[chosen_game_indice - 1].title);
 
                 auto player = game.get_player();
 
-                decltype(game)::board::position pos;
+                board::position pos;
 
                 std::cout << "Row: ", std::cin >> pos[0];
                 std::cout << "Column: ", std::cin >> pos[1], std::cout << "\n";
@@ -68,13 +92,13 @@ cli_game()
                 else
                         std::println("Invalid move!"), sleep(1);
         }
-        reprint_game();
+        reprint_game(game, game_options[chosen_game_indice - 1].title);
         auto result = game.get_result();
-        bool tie    = std::holds_alternative<decltype(game)::tie>(result);
+        bool tie    = std::holds_alternative<game::tie>(result);
         if (tie)
                 std::println("Tie!");
         else {
-                auto win = get<decltype(game)::win>(result);
+                auto win = get<game::win>(result);
                 std::println("Player {} wins!", win.player);
                 std::println("Line: {}", win.line);
         }
