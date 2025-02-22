@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../game.hpp"
-#include "varia/grid.hpp"
+#include "board.hpp"
 #include "varia/line.hpp"
 
 #include <memory>
@@ -10,10 +10,9 @@
 
 namespace mnkg::mnk {
 
-class game
-        : public ::mnkg::game<typename grid<std::optional<size_t> >::position> {
+class game : public ::mnkg::game<board::position> {
 public:
-        using board = grid<std::optional<size_t> >;
+        using board = board;
 
         struct win {
                 player_indice         player;
