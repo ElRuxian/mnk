@@ -14,6 +14,8 @@ class game : public ::mnkg::game<board::position> {
 public:
         using board = board;
 
+        // TODO: move the following to a separate file
+
         struct win {
                 player_indice         player;
                 line<board::position> line;
@@ -23,14 +25,6 @@ public:
 
         using result = std::variant<win, tie>;
 
-private:
-        board                 board_;
-        size_t                turn_   = 0;
-        std::optional<result> result_ = std::nullopt;
-
-        const size_t line_span_; // how many aligned moves are needed to win
-        const bool   overline_;  // win by aligning more than line_span_ moves
-
         class play_filter {
         public:
                 virtual ~play_filter() = default;
@@ -39,6 +33,15 @@ private:
                 allowed(const game &, const player_indice &, const action &)
                     = 0;
         };
+
+private:
+        board                 board_;
+        size_t                turn_   = 0;
+        std::optional<result> result_ = std::nullopt;
+
+        const size_t line_span_; // how many aligned moves are needed to win
+        const bool   overline_;  // win by aligning more than line_span_ moves
+
         const std::unique_ptr<play_filter> play_filter_;
 
         virtual std::vector<action>

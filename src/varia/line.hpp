@@ -59,7 +59,7 @@ find_line(const Grid &grid, const typename Grid::position &point)
                 return end;
         };
 
-        auto directions = std::to_array<point_t>(
+        constexpr auto directions = std::to_array<point_t>(
             { { 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 } });
 
         for (auto &&dir : directions) {
