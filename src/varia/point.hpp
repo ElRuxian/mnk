@@ -169,7 +169,7 @@ BINARY_OPERATOR(/)
 std::ostream &
 operator<<(std::ostream &ostream, const point_c auto &point)
 {
-        return ostream << std::format("({})", range_formatter(point));
+        return ostream << std::format("{}", range_formatter(point));
 }
 
 enum class Metric { Euclidean, Chebyshev };
