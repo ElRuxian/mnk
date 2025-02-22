@@ -1,17 +1,17 @@
 #pragma once
 
-#include "game.hpp"
-#include "grid.hpp"
-#include "mnk/model/line.hpp"
-#include "mnk/model/point.hpp"
+#include "../game.hpp"
+#include "varia/grid.hpp"
+#include "varia/line.hpp"
 
 #include <memory>
 #include <optional>
 #include <vector>
 
-namespace mnk::model {
+namespace mnkg::mnk {
 
-class mnk : public game<typename grid<std::optional<size_t> >::position> {
+class game
+        : public ::mnkg::game<typename grid<std::optional<size_t> >::position> {
 public:
         using board = grid<std::optional<size_t> >;
 
@@ -29,15 +29,15 @@ private:
         size_t                turn_   = 0;
         std::optional<result> result_ = std::nullopt;
 
-        const size_t line_span_;
-        const bool   overline_;
+        const size_t line_span_; // how many aligned moves are needed to win
+        const bool   overline_;  // win by aligning more than line_span_ moves
 
         class play_filter {
         public:
                 virtual ~play_filter() = default;
 
                 virtual bool
-                allowed(const mnk &, const player_indice &, const action &)
+                allowed(const game &, const player_indice &, const action &)
                     = 0;
         };
         const std::unique_ptr<play_filter> play_filter_;
@@ -115,9 +115,10 @@ public:
                 std::unique_ptr<play_filter> play_filter  = nullptr;
         } settings_;
 
-        mnk(settings &&settings) :
-                game(settings.player_count), board_(settings.board_size),
-                line_span_(settings.line_span), overline_(settings.overline),
+        game(settings &&settings) :
+                ::mnkg::game<action>(settings.player_count),
+                board_(settings.board_size), line_span_(settings.line_span),
+                overline_(settings.overline),
                 play_filter_(std::move(settings.play_filter))
         {
                 assert(line_span_ > 0);
@@ -125,7 +126,7 @@ public:
                        <= norm<Metric::Chebyshev>(board_.get_size()));
         }
 
-        mnk() : mnk(settings{}) {}
+        game() : game(settings{}) {}
 
         inline const board &
         get_board() const noexcept
@@ -146,4 +147,4 @@ public:
         }
 };
 
-} // namespace mnk::model
+} // namespace mnkg::mnk

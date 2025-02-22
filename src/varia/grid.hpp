@@ -7,7 +7,7 @@
 
 #include "point.hpp"
 
-namespace mnk::model {
+namespace mnkg {
 
 template <typename Cell>
 class grid {
@@ -94,4 +94,4 @@ find_equal_cell_sequence_end(const Grid                    &grid,
         return end;
 }
 
-} // namespace mnk::model
+} // namespace mnkg

@@ -2,9 +2,9 @@
 #include <iostream>
 #include <print>
 
-#include "mnk/model/mnk.hpp"
+#include "mnk/game.hpp"
 
-auto game = mnk::model::mnk{};
+auto game = mnkg::mnk::game{};
 
 template <class Stream>
 requires std::is_base_of_v<std::basic_ios<char>, Stream> std::ostream &

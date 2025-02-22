@@ -7,7 +7,7 @@
 #include "grid.hpp"
 #include "point.hpp"
 
-namespace mnk::model {
+namespace mnkg {
 
 template <point_c Point>
 class line {
@@ -70,9 +70,9 @@ find_line(const Grid &grid, const typename Grid::position &point)
         return std::nullopt;
 }
 
-} // namespace mnk::model
+} // namespace mnkg
 
-template <mnk::model::line_c Line, typename CharT>
+template <mnkg::line_c Line, typename CharT>
 struct std::formatter<Line, CharT> : std::formatter<CharT> {
 
         template <typename Context>

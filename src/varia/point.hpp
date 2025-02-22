@@ -17,7 +17,7 @@
 
 #include "range_formatter.hpp"
 
-namespace mnk::model {
+namespace mnkg {
 
 template <typename Component, size_t Dimension> // clang-format off
         requires(std::is_arithmetic_v<Component> && Dimension > 0)
@@ -126,7 +126,7 @@ template <typename T, class T_ = std::remove_cvref_t<T> >
 concept point_c
     = std::is_same_v<T_, point<typename T_::component, T_::dimension> >;
 
-template <std::size_t I, mnk::model::point_c Point>
+template <std::size_t I, mnkg::point_c Point>
 auto &
 get(Point &point)
 {
@@ -134,7 +134,7 @@ get(Point &point)
         return point[I];
 }
 
-template <std::size_t I, mnk::model::point_c Point>
+template <std::size_t I, mnkg::point_c Point>
 const auto &
 get(const Point &point)
 {
@@ -192,14 +192,14 @@ norm(const point_c auto &point)
         }
 }
 
-} // namespace mnk::model
+} // namespace mnkg
 
 namespace std {
 
-template <mnk::model::point_c Point>
+template <mnkg::point_c Point>
 struct tuple_size<Point> : integral_constant<std::size_t, Point::dimension> {};
 
-template <std::size_t I, mnk::model::point_c Point>
+template <std::size_t I, mnkg::point_c Point>
 struct tuple_element<I, Point> {
         using type = typename Point::component;
 };

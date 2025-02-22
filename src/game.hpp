@@ -3,7 +3,8 @@
 #include <algorithm>
 #include <cassert>
 #include <vector>
-namespace mnk::model {
+
+namespace mnkg {
 
 template <typename Action>
 class game {
@@ -96,4 +97,5 @@ public:
 protected:
         std::size_t initial_player_count_;
 };
-}; // namespace mnk::model
+
+} // namespace mnkg
