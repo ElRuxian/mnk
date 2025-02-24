@@ -196,6 +196,9 @@ template <typename Range>
 point(Range &&range) -> point<typename std::ranges::range_value_t<Range>,
                               decltype(std::ranges::size(range))::value>;
 
+template <typename... Args>
+point(Args...) -> point<std::common_type_t<Args...>, sizeof...(Args)>;
+
 } // namespace mnkg
 
 namespace std {
