@@ -99,6 +99,7 @@ auto
 coords(const Grid &grid)
 {
         using namespace std::views;
+        using std::views::transform;
         const auto &[x_limit, y_limit] = grid.get_size();
         return iota(0, x_limit) | transform([y_limit](auto x) {
                        return iota(0, y_limit) | transform([x](auto y) {
