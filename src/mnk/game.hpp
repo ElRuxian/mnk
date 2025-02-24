@@ -94,7 +94,7 @@ private:
                 board_[position] = player;
                 turn_++;
                 if (auto line = find_line(board_, position)) {
-                        auto len = length<Metric::Chebyshev>(line.value()) + 1;
+                        auto len = length<metric::chebyshev>(line.value()) + 1;
                         if (overline_ ? len >= line_span_ : len == line_span_)
                                 result_ = { win{ player, line.value() } };
                 }
@@ -125,7 +125,7 @@ public:
         {
                 assert(line_span_ > 0);
                 assert(line_span_
-                       <= norm<Metric::Chebyshev>(board_.get_size()));
+                       <= norm<metric::chebyshev>(board_.get_size()));
         }
 
         game() : game(settings{}) {}

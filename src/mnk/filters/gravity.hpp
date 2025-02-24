@@ -19,7 +19,7 @@ public:
         void
         set_direction(board::position direction)
         {
-                assert(norm<Metric::Chebyshev>(direction) == 1);
+                assert(norm<metric::chebyshev>(direction) == 1);
                 direction_ = direction;
         }
 

@@ -172,16 +172,16 @@ operator<<(std::ostream &ostream, const point_c auto &point)
         return ostream << std::format("{}", range_formatter(point));
 }
 
-enum class Metric { Euclidean, Chebyshev };
-template <Metric Tag = Metric::Euclidean>
+enum class metric { euclidean, chebyshev };
+template <metric Tag = metric::euclidean>
 constexpr auto
 norm(const point_c auto &point)
 {
-        if constexpr (Tag == Metric::Euclidean) {
+        if constexpr (Tag == metric::euclidean) {
                 static_assert(point.dimension == 2
                               && "current implementation limited to 2D");
                 return std::hypot(point[0], point[1]);
-        } else if constexpr (Tag == Metric::Chebyshev) {
+        } else if constexpr (Tag == metric::chebyshev) {
                 using std::ranges::max_element;
                 using std::views::transform;
                 auto abs_values = transform(

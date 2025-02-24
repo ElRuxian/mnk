@@ -35,7 +35,7 @@ operator<<(std::ostream &ostream, const line_c auto &line)
         return ostream << std::format("{}", range_formatter(line.endpoints()));
 }
 
-template <Metric Metric>
+template <metric Metric>
 auto
 length(const line_c auto &line)
 {
@@ -64,7 +64,7 @@ find_line(const Grid &grid, const typename Grid::position &point)
 
         for (auto &&dir : directions) {
                 line<point_t> line = { find_end(dir), find_end(-dir) };
-                if (length<Metric::Chebyshev>(line) > 0)
+                if (length<metric::chebyshev>(line) > 0)
                         return line;
         }
         return std::nullopt;
