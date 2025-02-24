@@ -199,6 +199,13 @@ point(Range &&range) -> point<typename std::ranges::range_value_t<Range>,
 template <typename... Args>
 point(Args...) -> point<std::common_type_t<Args...>, sizeof...(Args)>;
 
+template <point_c Point>
+auto
+transform(auto transformation, const Point &lhs, const Point &rhs)
+{
+        return Point(std::views::zip_transform(transformation, lhs, rhs));
+}
+
 } // namespace mnkg
 
 namespace std {
