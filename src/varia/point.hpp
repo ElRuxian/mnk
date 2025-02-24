@@ -192,6 +192,10 @@ norm(const point_c auto &point)
         }
 }
 
+template <typename Range>
+point(Range &&range) -> point<typename std::ranges::range_value_t<Range>,
+                              decltype(std::ranges::size(range))::value>;
+
 } // namespace mnkg
 
 namespace std {
