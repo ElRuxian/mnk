@@ -2,7 +2,7 @@
 
 #include "../game.hpp"
 #include "board.hpp"
-#include "varia/line.hpp"
+#include "result.hpp"
 
 #include <memory>
 #include <optional>
@@ -13,17 +13,6 @@ namespace mnkg::mnk {
 class game : public ::mnkg::game<board::position> {
 public:
         using board = board;
-
-        // TODO: move the following to a separate file
-
-        struct win {
-                player::indice        player;
-                line<board::position> line;
-        };
-
-        struct tie {};
-
-        using result = std::variant<win, tie>;
 
         class play_filter {
         public:
@@ -75,7 +64,7 @@ private:
 
         virtual bool
         is_playable_(player::indice player,
-                     const action &position) const override
+                     const action  &position) const override
         {
                 bool empty
                     = within(board_, position) && !board_[position].has_value();
@@ -111,7 +100,7 @@ private:
 public:
         struct settings {
                 static const size_t          player_count = 2;
-                board::position              board_size   = { 3, 3 };
+                point<int, 2>                board_size   = { 3, 3 };
                 size_t                       line_span    = 3;
                 bool                         overline     = true;
                 std::unique_ptr<play_filter> play_filter  = nullptr;
