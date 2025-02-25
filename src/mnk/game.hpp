@@ -131,6 +131,12 @@ public:
                 return turn_ % initial_player_count_;
         }
 
+        size_t
+        get_turn() const noexcept
+        {
+                return turn_;
+        }
+
         const result &
         get_result() const noexcept
         {
