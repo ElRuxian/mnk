@@ -77,6 +77,12 @@ public:
                 return self.components_.end();
         }
 
+        auto consteval
+        size() const noexcept
+        {
+                return Dimension;
+        }
+
         friend void
         swap(point &lhs, point &rhs)
         {
