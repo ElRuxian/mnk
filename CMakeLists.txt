@@ -13,7 +13,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(SFML 2.5 COMPONENTS system window graphics network audio REQUIRED)
 
-include_directories(src)
+include_directories(src/mnkg)
 
 file(GLOB_RECURSE SOURCES src/*.cpp)
 
