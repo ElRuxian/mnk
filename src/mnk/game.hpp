@@ -64,6 +64,8 @@ public:
                 return result_.value();
         }
 
+        class builder;
+
 private:
         board                  board_;
         size_t                 turn_   = 0;
