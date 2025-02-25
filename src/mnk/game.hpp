@@ -38,13 +38,10 @@ private:
                 auto legal_actions = std::vector<action>();
                 if (is_over_())
                         return legal_actions;
-                const auto &[x, y] = board_.get_size();
-                for (auto i = 0; i < x; ++i)
-                        for (auto j = 0; j < y; ++j) {
-                                action action = { i, j };
-                                if (is_playable_(player, action))
-                                        legal_actions.push_back(action);
-                        }
+                for (const auto &pos : coords(get_board())) {
+                        if (is_playable_(player, pos))
+                                legal_actions.push_back(pos);
+                }
                 return legal_actions;
         };
 
