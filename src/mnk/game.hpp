@@ -17,7 +17,7 @@ public:
         // TODO: move the following to a separate file
 
         struct win {
-                player_indice         player;
+                player::indice        player;
                 line<board::position> line;
         };
 
@@ -30,7 +30,7 @@ public:
                 virtual ~play_filter() = default;
 
                 virtual bool
-                allowed(const game &, const player_indice &, const action &)
+                allowed(const game &, const player::indice &, const action &)
                     = 0;
         };
 
@@ -45,7 +45,7 @@ private:
         const std::unique_ptr<play_filter> play_filter_;
 
         virtual std::vector<action>
-        legal_actions_(player_indice player_indice) const override
+        legal_actions_(player::indice player) const override
         {
                 auto legal_actions = std::vector<action>();
                 if (is_over_())
@@ -54,14 +54,14 @@ private:
                 for (auto i = 0; i < x; ++i)
                         for (auto j = 0; j < y; ++j) {
                                 action action = { i, j };
-                                if (is_playable_(player_indice, action))
+                                if (is_playable_(player, action))
                                         legal_actions.push_back(action);
                         }
                 return legal_actions;
         };
 
         virtual float
-        payoff_(player_indice player) const override
+        payoff_(player::indice player) const override
         {
                 if (!result_.has_value())
                         return 0;
@@ -74,7 +74,7 @@ private:
         }
 
         virtual bool
-        is_playable_(player_indice player,
+        is_playable_(player::indice player,
                      const action &position) const override
         {
                 bool empty
@@ -89,7 +89,7 @@ private:
         }
 
         virtual void
-        play_(player_indice player, const action &position) override
+        play_(player::indice player, const action &position) override
         {
                 board_[position] = player;
                 turn_++;
@@ -124,6 +124,7 @@ public:
                 play_filter_(std::move(settings.play_filter))
         {
                 assert(line_span_ > 0);
+                player::indice current_player;
                 assert(line_span_
                        <= norm<metric::chebyshev>(board_.get_size()));
         }
@@ -136,7 +137,7 @@ public:
                 return board_;
         }
 
-        player_indice
+        player::indice
         get_player() const noexcept
         {
                 return turn_ % initial_player_count_;

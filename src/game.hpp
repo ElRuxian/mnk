@@ -4,24 +4,25 @@
 #include <cassert>
 #include <vector>
 
+#include "player.hpp"
+
 namespace mnkg {
 
 template <typename Action>
 class game {
 public:
-        using action        = Action;
-        using player_indice = std::size_t;
+        using action = Action;
 
 private:
         virtual std::vector<Action>
-        legal_actions_(player_indice player) const = 0;
+        legal_actions_(player::indice player) const = 0;
 
         virtual float
-        payoff_(player_indice player) const
+        payoff_(player::indice player) const
             = 0;
 
         virtual bool
-        is_playable_(player_indice player, const action &action) const
+        is_playable_(player::indice player, const action &action) const
         {
                 using std::ranges::contains;
                 return is_legal_player(player)
@@ -29,13 +30,13 @@ private:
         }
 
         virtual void
-        play_(player_indice player, const action &action)
+        play_(player::indice player, const action &action)
             = 0;
 
         virtual bool
         is_over_() const
         {
-                for (player_indice i = 0; i < initial_player_count_; ++i)
+                for (player::indice i = 0; i < initial_player_count_; ++i)
                         if (!legal_actions_(i).empty())
                                 return false;
                 return true;
@@ -50,20 +51,20 @@ public:
         }
 
         inline bool
-        is_legal_player(player_indice player) const
+        is_legal_player(player::indice player) const
         {
                 return player < initial_player_count_;
         }
 
         inline float
-        payoff(player_indice player) const
+        payoff(player::indice player) const
         {
                 assert(is_legal_player(player));
                 return payoff_(player);
         }
 
         inline std::vector<Action> // factual until next play
-        legal_actions(player_indice player) const
+        legal_actions(player::indice player) const
         {
                 assert(is_legal_player(player));
                 auto actions = legal_actions_(player);
@@ -72,7 +73,7 @@ public:
         }
 
         bool
-        is_playable(player_indice player, const action &action) const
+        is_playable(player::indice player, const action &action) const
         {
                 bool playable = is_playable_(player, action);
                 assert(playable == game::is_playable_(player, action));
@@ -80,7 +81,7 @@ public:
         }
 
         inline void
-        play(player_indice player, const action &action)
+        play(player::indice player, const action &action)
         {
                 assert(is_playable(player, action));
                 play_(player, action);

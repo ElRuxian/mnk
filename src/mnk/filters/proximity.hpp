@@ -18,7 +18,7 @@ class proximity : public game::play_filter {
         }
 
         bool
-        allowed(const game &game, const game::player_indice &player,
+        allowed(const game &game, const player::indice &player,
                 const game::action &action) override
         {
                 assert(range_ == 1 && "limited implementation");

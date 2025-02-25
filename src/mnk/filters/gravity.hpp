@@ -36,7 +36,7 @@ public:
         }
 
         bool
-        allowed(const game &game, const game::player_indice &player,
+        allowed(const game &game, const player::indice &player,
                 const game::action &action) override
         {
                 return action == fall_from(game.get_board(), action);
