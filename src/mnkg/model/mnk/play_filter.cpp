@@ -1,5 +1,3 @@
-#pragma once
-
 #include "play_filter.hpp"
 #include "game.hpp"
 
