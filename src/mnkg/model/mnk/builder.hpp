@@ -2,7 +2,7 @@
 #include "game.hpp"
 #include "play_filter.hpp"
 
-namespace mnkg::mnk {
+namespace mnkg::model::mnk {
 
 class game::builder {
 public:
@@ -39,4 +39,4 @@ public:
         }
 };
 
-} // namespace mnkg::mnk
+} // namespace mnkg::model::mnk

@@ -10,9 +10,9 @@
 #include <optional>
 #include <vector>
 
-namespace mnkg::mnk {
+namespace mnkg::model::mnk {
 
-class game : public ::mnkg::game<action> {
+class game : public model::game<action> {
 public:
         struct settings {
                 static const size_t player_count = 2;
@@ -27,7 +27,7 @@ public:
         };
 
         game(settings &&settings) :
-                ::mnkg::game<action>(settings.player_count),
+                model::game<action>(settings.player_count),
                 board_(settings.board.size), rules_(std::move(settings.rules))
         {
         }
@@ -135,4 +135,4 @@ private:
         }
 };
 
-} // namespace mnkg::mnk
+} // namespace mnkg::model::mnk

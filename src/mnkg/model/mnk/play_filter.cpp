@@ -3,7 +3,7 @@
 #include "play_filter.hpp"
 #include "game.hpp"
 
-namespace mnkg::mnk::play_filter {
+namespace mnkg::model::mnk::play_filter {
 
 board::position
 fall_from(const board &board, board::position pos, board::position dir)
@@ -39,4 +39,4 @@ proximity::allowed_(const game &game, const player::indice &player,
         return false;
 }
 
-} // namespace mnkg::mnk::play_filter
+} // namespace mnkg::model::mnk::play_filter

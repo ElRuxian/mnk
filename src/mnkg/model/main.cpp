@@ -5,7 +5,7 @@
 #include "mnk/builder.hpp"
 #include "mnk/game.hpp"
 
-using namespace mnkg::mnk;
+using namespace mnkg::model::mnk;
 
 template <class Stream>
 requires std::is_base_of_v<std::basic_ios<char>, Stream> std::ostream &

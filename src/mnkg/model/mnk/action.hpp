@@ -2,6 +2,6 @@
 
 #include "board.hpp"
 
-namespace mnkg::mnk {
+namespace mnkg::model::mnk {
 using action = board::position;
 }

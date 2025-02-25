@@ -6,7 +6,7 @@
 
 #include "player.hpp"
 
-namespace mnkg {
+namespace mnkg::model {
 
 template <typename Action>
 class game {
@@ -99,4 +99,4 @@ protected:
         std::size_t initial_player_count_;
 };
 
-} // namespace mnkg
+} // namespace mnkg::model

@@ -1,8 +1,8 @@
 #pragma once
 #include "action.hpp"
-#include "player.hpp"
+#include "model/player.hpp"
 
-namespace mnkg::mnk {
+namespace mnkg::model::mnk {
 
 class game; // forward declaration
 
@@ -59,4 +59,4 @@ private:
 class composite; // TODO
 
 } // namespace play_filter
-} // namespace mnkg::mnk
+} // namespace mnkg::model::mnk

@@ -1,12 +1,12 @@
 #pragma once
 
 #include "board.hpp"
-#include "player.hpp"
+#include "model/player.hpp"
 
 #include "varia/grid.hpp"
 #include "varia/line.hpp"
 
-namespace mnkg::mnk {
+namespace mnkg::model::mnk {
 
 struct win {
         player::indice        player;
@@ -29,4 +29,4 @@ is_tie(const result &result) noexcept
         return std::holds_alternative<tie>(result);
 }
 
-} // namespace mnkg::mnk
+} // namespace mnkg::model::mnk
