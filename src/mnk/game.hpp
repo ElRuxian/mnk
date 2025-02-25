@@ -91,8 +91,7 @@ private:
                 if (!is_over_())
                         return 0;
                 const auto &result = get_result();
-                bool        won    = std::holds_alternative<win>(result);
-                if (!won)
+                if (!is_win(result))
                         return 0;
                 auto winner = std::get<win>(result).player;
                 return winner == player ? 1 : -1;

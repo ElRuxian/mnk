@@ -96,13 +96,12 @@ cli_game()
         }
         reprint_game(game, game_options[chosen_game_indice - 1].title);
         auto result = game.get_result();
-        bool tied   = std::holds_alternative<tie>(result);
-        if (tied)
+        if (is_tie(result))
                 std::println("Tie!");
         else {
-                auto win = get<struct win>(result);
-                std::println("Player {} wins!", win.player);
-                std::println("Line: {}", win.line);
+                auto data = get<win>(result);
+                std::println("Player {} wins!", data.player);
+                std::println("Line: {}", data.line);
         }
 }
 

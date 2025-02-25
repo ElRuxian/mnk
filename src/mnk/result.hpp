@@ -17,4 +17,16 @@ struct tie {};
 
 using result = std::variant<win, tie>;
 
+inline bool
+is_win(const result &result) noexcept
+{
+        return std::holds_alternative<win>(result);
+}
+
+inline bool
+is_tie(const result &result) noexcept
+{
+        return std::holds_alternative<tie>(result);
+}
+
 } // namespace mnkg::mnk
