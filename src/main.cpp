@@ -2,8 +2,9 @@
 #include <iostream>
 #include <print>
 
+#include "mnk/builder.hpp"
 #include "mnk/game.hpp"
-#include "mnk/presets.hpp"
+
 using namespace mnkg::mnk;
 
 template <class Stream>
@@ -55,12 +56,14 @@ cli_game()
 {
         struct game_option {
                 std::string title;
-                game::settings (*settings)();
+                game (*game)();
         };
+        using builder = game::builder;
+        using enum builder::preset;
         auto game_options = std::to_array<game_option>(
-            { { "Tic-Tac-Toe", presets::tic_tac_toe },
-              { "Connect Four", presets::connect_four },
-              { "Gomoku", presets::gomoku } });
+            { { "Tic-Tac-Toe", builder::build<tictactoe> },
+              { "Connect Four", builder::build<connect4> },
+              { "Gomoku", builder::build<gomoku> } });
 
         std::optional<game> chosen_game = std::nullopt;
         std::println("SELECT GAME");
@@ -71,13 +74,12 @@ cli_game()
                 std::cin >> chosen_game_indice;
                 if (chosen_game_indice <= game_options.size())
                         chosen_game.emplace(
-                            game_options[chosen_game_indice - 1].settings());
+                            game_options[chosen_game_indice - 1].game());
                 else
                         std::println("Invalid choice!");
         }
         auto &game = chosen_game.value();
         while (not game.is_over()) {
-
                 reprint_game(game, game_options[chosen_game_indice - 1].title);
 
                 auto player = game.get_player();
@@ -94,11 +96,11 @@ cli_game()
         }
         reprint_game(game, game_options[chosen_game_indice - 1].title);
         auto result = game.get_result();
-        bool tie    = std::holds_alternative<game::tie>(result);
-        if (tie)
+        bool tied   = std::holds_alternative<tie>(result);
+        if (tied)
                 std::println("Tie!");
         else {
-                auto win = get<game::win>(result);
+                auto win = get<struct win>(result);
                 std::println("Player {} wins!", win.player);
                 std::println("Line: {}", win.line);
         }
