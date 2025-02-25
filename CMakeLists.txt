@@ -17,18 +17,16 @@ include_directories(src/mnkg)
 
 file(GLOB_RECURSE SOURCES src/*.cpp)
 
-set(EXECUTABLES "")
+add_library(mnkg STATIC ${SOURCES})
+
 foreach(source_file ${SOURCES})
     file(READ ${source_file} CONTENTS)
     if (CONTENTS MATCHES "main\\s*\\(")
         get_filename_component(name ${source_file} NAME_WE)
         add_executable(${name} ${source_file})
+        target_link_libraries(${name} PRIVATE mnkg)
         if (CONTENTS MATCHES "#include <SFML/")
             target_link_libraries(${name} PRIVATE sfml-system sfml-window sfml-graphics sfml-audio sfml-network)
         endif()
-        list(APPEND EXECUTABLES ${name})
     endif()
 endforeach()
-
-message("Generated sources: ${SOURCES}")
-message("Generated executables: ${EXECUTABLES}")
