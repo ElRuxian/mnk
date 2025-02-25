@@ -48,11 +48,11 @@ private:
         virtual float
         payoff_(player::indice player) const override
         {
-                if (!result_.has_value())
+                if (!is_over_())
                         return 0;
-                auto result = result_.value();
-                bool is_win = std::holds_alternative<win>(result);
-                if (!is_win)
+                const auto &result = get_result();
+                bool        won    = std::holds_alternative<win>(result);
+                if (!won)
                         return 0;
                 auto winner = std::get<win>(result).player;
                 return winner == player ? 1 : -1;
