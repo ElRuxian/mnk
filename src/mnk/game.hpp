@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../game.hpp"
+#include "action.hpp"
 #include "board.hpp"
 #include "result.hpp"
 
@@ -10,10 +11,8 @@
 
 namespace mnkg::mnk {
 
-class game : public ::mnkg::game<board::position> {
+class game : public ::mnkg::game<action> {
 public:
-        using board = board;
-
         class play_filter {
         public:
                 virtual ~play_filter() = default;
