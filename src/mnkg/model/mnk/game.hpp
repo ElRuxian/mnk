@@ -64,6 +64,12 @@ public:
                 return result_.value();
         }
 
+        static constexpr size_t
+        get_player_count() noexcept
+        {
+                return settings::player_count;
+        }
+
         class builder;
 
 private:
