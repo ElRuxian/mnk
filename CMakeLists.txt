@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.14)
 project(ExtendedMNKGame)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -11,7 +11,25 @@ endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-find_package(SFML 2.5 COMPONENTS system window graphics network audio REQUIRED)
+include(FetchContent)
+
+add_definitions(-DASIO_STANDALONE)
+FetchContent_Declare(
+    asio
+    GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
+    GIT_TAG asio-1-28-0
+)
+FetchContent_MakeAvailable(asio)
+set(ASIO_INCLUDE_DIR "${CMAKE_BINARY_DIR}/_deps/asio-src/asio/include")
+include_directories(${ASIO_INCLUDE_DIR})
+
+FetchContent_Declare(
+    crow
+    GIT_REPOSITORY https://github.com/CrowCpp/Crow.git
+    GIT_TAG v1.2.1.2
+)
+FetchContent_MakeAvailable(crow)
+include_directories(${crow_SOURCE_DIR}/include)
 
 include_directories(src/mnkg)
 
@@ -25,8 +43,5 @@ foreach(source_file ${SOURCES})
         get_filename_component(name ${source_file} NAME_WE)
         add_executable(${name} ${source_file})
         target_link_libraries(${name} PRIVATE mnkg)
-        if (CONTENTS MATCHES "#include <SFML/")
-            target_link_libraries(${name} PRIVATE sfml-system sfml-window sfml-graphics sfml-audio sfml-network)
-        endif()
     endif()
 endforeach()
