@@ -48,6 +48,19 @@ public:
                 return actions;
         }
 
+        inline std::vector<move> // factual until next play
+        legal_moves() const
+        {
+                std::vector<move> moves;
+                for (player::indice i = 0; i < initial_player_count_; ++i) {
+                        const auto &actions = legal_actions(i);
+                        moves.reserve(moves.size() + actions.size());
+                        for (const auto &action : actions)
+                                moves.emplace_back(i, action);
+                }
+                return moves;
+        }
+
         bool
         is_playable(player::indice player, const action &action) const
         {
