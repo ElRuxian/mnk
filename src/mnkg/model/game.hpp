@@ -13,6 +13,11 @@ class game {
 public:
         using action = Action;
 
+        struct move {
+                player::indice player;
+                action         action;
+        };
+
 private:
         virtual std::vector<Action>
         legal_actions_(player::indice player) const = 0;
@@ -85,6 +90,12 @@ public:
         {
                 assert(is_playable(player, action));
                 play_(player, action);
+        }
+
+        inline void
+        play(const move &move)
+        {
+                play(move.player, move.action);
         }
 
         virtual bool
