@@ -18,35 +18,6 @@ public:
                 action         action;
         };
 
-private:
-        virtual std::vector<Action>
-        legal_actions_(player::indice player) const = 0;
-
-        virtual float
-        payoff_(player::indice player) const
-            = 0;
-
-        virtual bool
-        is_playable_(player::indice player, const action &action) const
-        {
-                using std::ranges::contains;
-                return is_legal_player(player)
-                       && contains(legal_actions_(player), action);
-        }
-
-        virtual void
-        play_(player::indice player, const action &action)
-            = 0;
-
-        virtual bool
-        is_over_() const
-        {
-                for (player::indice i = 0; i < initial_player_count_; ++i)
-                        if (!legal_actions_(i).empty())
-                                return false;
-                return true;
-        }
-
 public:
         virtual ~game() = default;
 
@@ -108,6 +79,35 @@ public:
 
 protected:
         std::size_t initial_player_count_;
+
+private:
+        virtual std::vector<Action>
+        legal_actions_(player::indice player) const = 0;
+
+        virtual float
+        payoff_(player::indice player) const
+            = 0;
+
+        virtual bool
+        is_playable_(player::indice player, const action &action) const
+        {
+                using std::ranges::contains;
+                return is_legal_player(player)
+                       && contains(legal_actions_(player), action);
+        }
+
+        virtual void
+        play_(player::indice player, const action &action)
+            = 0;
+
+        virtual bool
+        is_over_() const
+        {
+                for (player::indice i = 0; i < initial_player_count_; ++i)
+                        if (!legal_actions_(i).empty())
+                                return false;
+                return true;
+        }
 };
 
 } // namespace mnkg::model
