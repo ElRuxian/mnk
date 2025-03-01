@@ -12,7 +12,7 @@
 
 namespace mnkg::model::mnk {
 
-class game : public model::game<action> {
+class game : public model::game::base<action> {
 public:
         struct settings {
                 static const size_t player_count = 2;
@@ -27,7 +27,7 @@ public:
         };
 
         game(settings &&settings) :
-                model::game<action>(settings.player_count),
+                model::game::base<action>(settings.player_count),
                 board_(settings.board.size), rules_(std::move(settings.rules))
         {
         }

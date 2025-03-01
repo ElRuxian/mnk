@@ -6,10 +6,10 @@
 
 #include "player.hpp"
 
-namespace mnkg::model {
+namespace mnkg::model::game {
 
 template <typename Action>
-class game {
+class base {
 public:
         using action = Action;
 
@@ -19,9 +19,9 @@ public:
         };
 
 public:
-        virtual ~game() = default;
+        virtual ~base() = default;
 
-        game(size_t player_count) : initial_player_count_(player_count)
+        base(size_t player_count) : initial_player_count_(player_count)
         {
                 assert(initial_player_count_ > 0);
         }
@@ -65,7 +65,7 @@ public:
         is_playable(player::indice player, const action &action) const
         {
                 bool playable = is_playable_(player, action);
-                assert(playable == game::is_playable_(player, action));
+                assert(playable == base::is_playable_(player, action));
                 return playable;
         }
 
@@ -86,7 +86,7 @@ public:
         is_over() const
         {
                 bool over = is_over_();
-                assert(over == game::is_over_());
+                assert(over == base::is_over_());
                 return over;
         }
 
@@ -123,4 +123,4 @@ private:
         }
 };
 
-} // namespace mnkg::model
+} // namespace mnkg::model::game
