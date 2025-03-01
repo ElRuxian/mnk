@@ -130,7 +130,7 @@ public:
         current_player() const
         {
                 auto player = current_player_();
-                assert(is_legal_player(player));
+                assert(base<Action>::is_legal_player(player));
                 return player;
         }
 

@@ -12,7 +12,7 @@
 
 namespace mnkg::model::mnk {
 
-class game : public model::game::base<action> {
+class game : public model::game::turn_based<action> {
 public:
         struct settings {
                 static const size_t player_count = 2;
@@ -44,12 +44,6 @@ public:
         get_board() const noexcept
         {
                 return board_;
-        }
-
-        player::indice
-        get_player() const noexcept
-        {
-                return turn_ % initial_player_count_;
         }
 
         size_t
@@ -140,6 +134,12 @@ private:
         is_over_() const override
         {
                 return result_.has_value();
+        }
+
+        virtual player::indice
+        current_player_() const noexcept override
+        {
+                return turn_ % initial_player_count_;
         }
 };
 
