@@ -45,6 +45,13 @@ public:
 
         game() : game(settings{}) {}
 
+        game &
+        operator=(game other)
+        {
+                std::swap(*this, other);
+                return *this;
+        }
+
         const struct settings::rules &
         get_rules() const noexcept
         {
