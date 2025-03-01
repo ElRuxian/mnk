@@ -39,7 +39,9 @@ public:
                 result_(other.result_),
                 rules_({ .line_span   = other.rules_.line_span,
                          .overline    = other.rules_.overline,
-                         .play_filter = other.rules_.play_filter->clone() })
+                         .play_filter = other.rules_.play_filter
+                                            ? other.rules_.play_filter->clone()
+                                            : nullptr })
         {
         }
 
