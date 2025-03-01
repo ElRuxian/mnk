@@ -32,6 +32,16 @@ public:
         {
         }
 
+        game(const game &other) :
+                model::game::base<action>(other.initial_player_count_),
+                board_(other.board_), turn_(other.turn_),
+                result_(other.result_),
+                rules_({ .line_span   = other.rules_.line_span,
+                         .overline    = other.rules_.overline,
+                         .play_filter = other.rules_.play_filter->clone() })
+        {
+        }
+
         game() : game(settings{}) {}
 
         const struct settings::rules &
@@ -84,6 +94,12 @@ private:
                 }
                 return legal_actions;
         };
+
+        virtual std::unique_ptr<base>
+        clone_() const override
+        {
+                return std::make_unique<game>(*this);
+        }
 
         virtual float
         payoff_(player::indice player) const override

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <memory>
 #include <vector>
 
 #include "player.hpp"
@@ -16,6 +17,10 @@ public:
         struct move {
                 player::indice player;
                 action         action;
+
+                bool
+                operator==(const move &other) const
+                    = default;
         };
 
 public:
@@ -24,6 +29,12 @@ public:
         base(size_t player_count) : initial_player_count_(player_count)
         {
                 assert(initial_player_count_ > 0);
+        }
+
+        std::unique_ptr<base>
+        clone() const
+        {
+                return clone_();
         }
 
         inline bool
@@ -94,6 +105,9 @@ protected:
         std::size_t initial_player_count_;
 
 private:
+        virtual std::unique_ptr<base>
+        clone_() const = 0;
+
         virtual std::vector<Action>
         legal_actions_(player::indice player) const = 0;
 
