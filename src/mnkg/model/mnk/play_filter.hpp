@@ -1,6 +1,7 @@
 #pragma once
 #include "action.hpp"
 #include "model/player.hpp"
+#include <memory>
 
 namespace mnkg::model::mnk {
 
@@ -23,6 +24,9 @@ public:
                 return allowed_(game, player, action);
         }
 
+        virtual std::unique_ptr<base>
+        clone() const = 0;
+
         virtual ~base() = default;
 };
 
@@ -34,6 +38,14 @@ public:
         {
                 assert(norm<metric::chebyshev>(direction) == 1);
         }
+
+        gravity(const gravity &other) = default;
+
+        virtual std::unique_ptr<base>
+        clone() const override
+        {
+                return std::make_unique<gravity>(*this);
+        };
 
 private:
         board::position direction_;
@@ -47,6 +59,14 @@ private:
 class proximity : public play_filter::base {
 public:
         proximity(size_t range = 1) : range_(range) {}
+
+        proximity(const proximity &other) = default;
+
+        virtual std::unique_ptr<base>
+        clone() const override
+        {
+                return std::make_unique<proximity>(*this);
+        };
 
 private:
         size_t range_;
