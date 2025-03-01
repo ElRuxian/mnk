@@ -30,6 +30,25 @@ public:
         virtual ~base() = default;
 };
 
+class bypass : public play_filter::base {
+private:
+        bool
+        allowed_(const game &game, const player::indice &player,
+                 const action &action) override
+        {
+                return true;
+        }
+
+public:
+        bypass()                    = default;
+        bypass(const bypass &other) = default;
+        virtual std::unique_ptr<base>
+        clone() const override
+        {
+                return std::make_unique<bypass>(*this);
+        };
+};
+
 // Filters out actions that don't "fall in a straight line"
 // Intended for games like Connect Four
 class gravity : public play_filter::base {
@@ -75,8 +94,6 @@ private:
         allowed_(const game &game, const player::indice &player,
                  const action &action) override;
 };
-
-class composite; // TODO
 
 } // namespace play_filter
 } // namespace mnkg::model::mnk
