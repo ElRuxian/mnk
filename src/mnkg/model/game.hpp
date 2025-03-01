@@ -123,4 +123,21 @@ private:
         }
 };
 
+template <typename Action>
+class turn_based : public virtual base<Action> {
+public:
+        inline player::indice
+        current_player() const
+        {
+                auto player = current_player_();
+                assert(is_legal_player(player));
+                return player;
+        }
+
+private:
+        virtual player::indice
+        current_player_() const
+            = 0;
+};
+
 } // namespace mnkg::model::game
