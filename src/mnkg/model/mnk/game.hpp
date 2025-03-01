@@ -32,6 +32,7 @@ public:
         {
         }
 
+        // TODO: Improve design to solve the poor maintainability over here
         game(const game &other) :
                 model::game::base<action>(other.initial_player_count_),
                 board_(other.board_), turn_(other.turn_),
