@@ -75,6 +75,7 @@ public:
         const result &
         get_result() const noexcept
         {
+                assert(result_.has_value());
                 return result_.value();
         }
 
