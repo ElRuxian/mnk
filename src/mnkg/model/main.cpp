@@ -2,6 +2,7 @@
 #include <iostream>
 #include <print>
 
+#include "mcts/ai.hpp"
 #include "mnk/builder.hpp"
 #include "mnk/game.hpp"
 
@@ -79,20 +80,35 @@ cli_game()
                         std::println("Invalid choice!");
         }
         auto &game = chosen_game.value();
+        auto  mcts = mnkg::model::mcts::mcts<class game>(game);
         while (not game.is_over()) {
                 reprint_game(game, game_options[chosen_game_indice - 1].title);
 
-                auto player = game.get_player();
+                auto player = game.current_player();
 
-                board::position pos;
+                if (player == 0) {
+                        board::position pos;
 
-                std::cout << "Row: ", std::cin >> pos[0];
-                std::cout << "Column: ", std::cin >> pos[1], std::cout << "\n";
+                        std::cout << "Row: ", std::cin >> pos[0];
+                        std::cout << "Column: ", std::cin >> pos[1],
+                            std::cout << "\n";
 
-                if (game.is_playable(player, pos))
-                        game.play(player, pos);
-                else
-                        std::println("Invalid move!"), sleep(1);
+                        if (game.is_playable(player, pos)) {
+                                game.play(player, pos);
+                                mcts.advance(
+                                    { .player = player, .action = pos });
+
+                        } else {
+                                std::println("Invalid move!"), sleep(1);
+                        }
+                } else {
+                        constexpr auto time_limit = std::chrono::seconds(3);
+                        constexpr auto iterations_limit = 10000000000;
+                        mcts.expand(time_limit, iterations_limit);
+                        auto move = mcts.evaluate();
+                        game.play(move);
+                        mcts.advance(move);
+                }
         }
         reprint_game(game, game_options[chosen_game_indice - 1].title);
         auto result = game.get_result();
