@@ -32,7 +32,7 @@ public:
         {
         }
 
-        // TODO: Improve design to solve the poor maintainability over here
+        // TODO: improve design (poor maintainability)
         game(const game &other) :
                 model::game::base<action>(other.initial_player_count_),
                 board_(other.board_), turn_(other.turn_),
@@ -47,10 +47,22 @@ public:
 
         game() : game(settings{}) {}
 
+        // TODO: improve design (poor maintainability)
+        friend void
+        swap(game &lhs, game &rhs)
+        {
+                using std::swap;
+                swap(lhs.board_, rhs.board_);
+                swap(lhs.turn_, rhs.turn_);
+                swap(lhs.result_, rhs.result_);
+                swap(lhs.rules_, rhs.rules_);
+                swap(lhs.initial_player_count_, rhs.initial_player_count_);
+        }
+
         game &
         operator=(game other)
         {
-                std::swap(*this, other);
+                swap(*this, other);
                 return *this;
         }
 
