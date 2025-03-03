@@ -111,6 +111,8 @@ private:
                 auto legal_actions = std::vector<action>();
                 if (is_over_())
                         return legal_actions;
+                if (player != current_player())
+                        return legal_actions;
                 for (const auto &pos : coords(get_board())) {
                         if (is_playable_(player, pos))
                                 legal_actions.push_back(pos);
