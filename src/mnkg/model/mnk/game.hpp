@@ -134,8 +134,10 @@ private:
                 const auto &result = get_result();
                 if (!is_win(result))
                         return 0;
-                auto winner = std::get<win>(result).player;
-                return winner == player ? 1 : -1;
+                auto winner   = std::get<win>(result).player;
+                auto max_turn = get_board().get_cell_count();
+                auto payoff   = 1 + max_turn - turn_;
+                return winner == player ? payoff : -2 * payoff;
         }
 
         virtual bool
