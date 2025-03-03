@@ -144,12 +144,9 @@ private:
                 const auto &board  = get_board();
                 const auto &filter = get_rules().play_filter;
 
-                bool legal
-                    = within(board, position) && !board[position].has_value();
-                bool allowed
-                    = !filter || filter->allowed(*this, player, position);
-
-                return legal && allowed;
+                return within(board, position) && !board[position].has_value()
+                       && player == current_player()
+                       && (!filter || filter->allowed(*this, player, position));
         }
 
         virtual void
