@@ -145,15 +145,14 @@ private:
 
                 board_[position] = player;
                 turn_++;
-                std::optional<mnk::result> result;
                 if (auto line = find_line(board_, position)) {
                         auto len = length<metric::chebyshev>(line.value()) + 1;
                         if (rules_.overline ? len >= rules_.line_span
                                             : len == rules_.line_span)
                                 result_ = { win{ player, line.value() } };
                 }
-                if (turn_ == board_.get_cell_count() && !result)
-                        result = { tie{} };
+                if (turn_ == board_.get_cell_count() && !result_)
+                        result_ = { tie{} };
         }
 
         virtual bool
