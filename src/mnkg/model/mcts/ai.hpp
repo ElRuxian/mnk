@@ -117,17 +117,18 @@ private:
         expand_(Node &parent)
         {
                 assert(!parent.untried.empty());
+                std::uniform_int_distribution<size_t> distribution(
+                    0, parent.untried.size() - 1);
+                swap(parent.untried.back(), parent.untried[distribution(rng_)]);
                 auto action = parent.untried.back();
                 parent.untried.pop_back();
-                auto game{ Game(parent.game) };
+                auto game = parent.game;
                 game.play(action);
-                auto untried = game.playable_actions();
-                std::shuffle(untried.begin(), untried.end(), rng_);
                 auto child = std::make_unique<Node>(
                     Node{ .action  = std::move(action),
                           .game    = std::move(game),
                           .parent  = &parent,
-                          .untried = std::move(untried) });
+                          .untried = game.playable_actions() });
                 parent.children.emplace_back(std::move(child));
                 return *parent.children.back();
         }
