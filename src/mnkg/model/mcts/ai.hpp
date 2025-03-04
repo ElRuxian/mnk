@@ -63,9 +63,13 @@ public:
                         root_         = std::move(*it);
                         root_->parent = nullptr;
                 } else {
+                        root_->action = action;
                         root_->game.play(action);
-                        root_->untried = root_->game.playable_actions();
+                        root_->visits = 0;
+                        root_->payoff = 0;
+                        // root_->parent = nullptr; // already nullptr
                         root_->children.clear();
+                        root_->untried = root_->game.playable_actions();
                 }
         }
 
