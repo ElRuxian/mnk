@@ -16,10 +16,14 @@ template <class Game, typename Action = typename Game::action>
         requires std::is_base_of_v<model::game::combinatorial<Action>, Game>
 class mcts { // clang-format on
 public:
-        mcts(Game game) :
+        struct settings {
+                size_t exploration_factor = 2; // UCT constant
+        };
+
+        mcts(Game game, settings settings = {}) :
                 root_{ std::make_unique<Node>(
                     Node{ .game = game, .untried = game.playable_actions() }) },
-                rng_{ std::random_device{}() }
+                rng_{ std::random_device{}() }, settings_{ settings }
         {
         }
 
@@ -84,15 +88,17 @@ private:
         };
         std::unique_ptr<Node> root_;
         std::mt19937          rng_;
+        settings              settings_;
 
-        static float
+        float
         rate_(const Node &node)
         {
                 // UCT (Upper Confidence Bound 1 applied to trees)
                 assert(node.parent);
                 if (node.visits > 0)
                         return static_cast<float>(node.payoff) / node.visits
-                               + std::sqrt(2 * std::log(node.parent->visits)
+                               + std::sqrt(settings_.exploration_factor
+                                           * std::log(node.parent->visits)
                                            / node.visits);
                 else
                         return std::numeric_limits<float>::infinity();
@@ -108,7 +114,7 @@ private:
                         node = std::max_element(
                                    node->children.begin(),
                                    node->children.end(),
-                                   [](const auto &a, const auto &b) {
+                                   [this](const auto &a, const auto &b) {
                                            return rate_(*a) < rate_(*b);
                                    })
                                    ->get();
