@@ -25,8 +25,7 @@ namespace mnkg::model::game {
 template <typename Action>
 class combinatorial {
 public:
-        using action   = Action;
-        using payoff_t = std::int8_t;
+        using action = Action;
 
         combinatorial()          = default;
         virtual ~combinatorial() = default;
@@ -72,23 +71,6 @@ public:
                 return player < player_count();
         }
 
-        inline payoff_t
-        payoff(player::indice player) const
-        {
-                auto payoff = payoff_(player);
-                assert(payoff == -payoff_(rival(player))); // zero-sum
-                return payoff;
-        }
-
-        std::array<payoff_t, player_count()>
-        payoffs()
-        {
-                std::array<payoff_t, player_count()> payoffs;
-                for (size_t i = 0; i < player_count(); ++i)
-                        payoffs[i] = payoff(i);
-                return payoffs;
-        }
-
         inline std::vector<Action> // factual until next play
         playable_actions() const
         {
@@ -109,9 +91,7 @@ public:
         winner() const
         {
                 assert(is_over());
-                auto winner = winner_();
-                assert(winner == combinatorial::winner_());
-                return winner;
+                return winner_();
         }
 
         bool
@@ -140,20 +120,8 @@ private:
         virtual std::vector<Action>
         playable_actions_() const = 0;
 
-        virtual payoff_t
-        payoff_(player::indice player) const
-            = 0;
-
-        virtual std::optional<player::indice>
-        winner_() const
-        {
-                if (!is_over())
-                        return std::nullopt;
-                payoff_t payoffs[player_count()] = { payoff(0), payoff(1) };
-                if (payoffs[0] == payoffs[1])
-                        return std::nullopt;
-                return payoffs[0] > payoffs[1] ? 0 : 1;
-        }
+        virtual std::optional<player::indice> // nullopt for draw
+        winner_() const = 0;
 
         virtual bool
         is_playable_(const action &action) const

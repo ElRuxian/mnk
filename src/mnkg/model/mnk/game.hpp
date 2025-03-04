@@ -104,17 +104,6 @@ private:
                 return playable_actions;
         };
 
-        virtual payoff_t
-        payoff_(player::indice player) const override
-        {
-                if (!is_over_() || is_draw())
-                        return 0;
-                auto winner   = std::get<win>(result()).player;
-                auto max_turn = board().get_cell_count();
-                auto payoff   = 1 + max_turn - turn_; // favor faster wins
-                return winner == player ? payoff : -payoff;
-        }
-
         virtual bool
         is_playable_(const action &position) const override
         {

@@ -74,7 +74,7 @@ private:
                 Game::action                        action; // that lead here
                 Game                                game;   // game-state
                 size_t                              visits = 0;
-                Game::payoff_t                      payoff = 0; // accumulated
+                int                                 payoff = 0; // accumulated
                 Node                               *parent = nullptr;
                 std::vector<std::unique_ptr<Node> > children;
                 std::vector<typename Game::action>  untried;
@@ -138,7 +138,7 @@ private:
                 return *parent.children.back();
         }
 
-        Game // over
+        Game // terminal state
         simulate_(Node &node)
         {
                 // Random playout
@@ -155,29 +155,28 @@ private:
         }
 
         void
-        backpropagate_(Node &node, auto payoffs)
+        backpropagate_(Node &node, Game terminal)
         {
-                assert(payoffs.size() == node.game.get_player_count());
                 for (Node *it = &node; it != nullptr; it = it->parent) {
                         it->visits++;
-                        it->payoff += payoffs[it->game.current_player()];
+                        if (!terminal.is_draw()) {
+                                bool winner = node.game.current_player()
+                                              == terminal.winner();
+                                it->payoff += winner ? 1 : -1;
+                        }
                 }
         }
 
         void
         iterate_()
         {
-                auto               &selected = select_();
-                Node               *leaf;
-                std::optional<Game> terminal;
+                auto &selected = select_();
                 if (selected.game.is_over()) {
-                        leaf     = &selected;
-                        terminal = selected.game;
+                        backpropagate_(selected, selected.game);
                 } else {
-                        leaf     = &expand_(selected);
-                        terminal = simulate_(*leaf);
+                        auto &leaf = expand_(selected);
+                        backpropagate_(leaf, simulate_(leaf));
                 }
-                backpropagate_(*leaf, terminal->payoffs());
         }
 };
 
