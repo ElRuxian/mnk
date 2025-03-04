@@ -21,8 +21,8 @@ public:
         };
 
         mcts(Game game, settings settings = {}) :
-                root_{ std::make_unique<Node>(
-                    Node{ .game = game, .untried = game.playable_actions() }) },
+                root_{ std::make_unique<node>(
+                    node{ .game = game, .untried = game.playable_actions() }) },
                 rng_{ std::random_device{}() }, settings_{ settings }
         {
         }
@@ -77,21 +77,21 @@ public:
         }
 
 private:
-        struct Node {
+        struct node {
                 Game::action                        action; // that lead here
                 Game                                game;   // game-state
                 size_t                              visits = 0;
                 int                                 payoff = 0; // accumulated
-                Node                               *parent = nullptr;
-                std::vector<std::unique_ptr<Node> > children;
+                node                               *parent = nullptr;
+                std::vector<std::unique_ptr<node> > children;
                 std::vector<typename Game::action>  untried;
         };
-        std::unique_ptr<Node> root_;
+        std::unique_ptr<node> root_;
         std::mt19937          rng_;
         settings              settings_;
 
         float
-        rate_(const Node &node)
+        rate_(const node &node)
         {
                 // UCT (Upper Confidence Bound 1 applied to trees)
                 assert(node.parent);
@@ -104,10 +104,10 @@ private:
                         return std::numeric_limits<float>::infinity();
         }
 
-        Node &
+        node &
         select_()
         {
-                Node *node = root_.get();
+                node *node = root_.get();
                 while (node->untried.empty()) {
                         if (node->children.empty())
                                 break; // terminal node
@@ -122,8 +122,8 @@ private:
                 return *node;
         }
 
-        Node &
-        expand_(Node &parent)
+        node &
+        expand_(node &parent)
         {
                 assert(!parent.untried.empty());
                 std::uniform_int_distribution<size_t> distribution(
@@ -133,8 +133,8 @@ private:
                 parent.untried.pop_back();
                 auto game = parent.game;
                 game.play(action);
-                auto child = std::make_unique<Node>(
-                    Node{ .action  = std::move(action),
+                auto child = std::make_unique<node>(
+                    node{ .action  = std::move(action),
                           .game    = std::move(game),
                           .parent  = &parent,
                           .untried = game.playable_actions() });
@@ -143,7 +143,7 @@ private:
         }
 
         Game // terminal state
-        simulate_(Node &node)
+        simulate_(node &node)
         {
                 // Random playout
                 auto game = node.game;
@@ -159,9 +159,9 @@ private:
         }
 
         void
-        backpropagate_(Node &node, Game terminal)
+        backpropagate_(node &node, Game terminal)
         {
-                for (Node *it = &node; it != nullptr; it = it->parent) {
+                for (auto *it = &node; it != nullptr; it = it->parent) {
                         it->visits++;
                         if (!terminal.is_draw()) {
                                 // set payoff from the perspective of the player
