@@ -160,9 +160,11 @@ private:
                 for (Node *it = &node; it != nullptr; it = it->parent) {
                         it->visits++;
                         if (!terminal.is_draw()) {
-                                bool winner = node.game.current_player()
-                                              == terminal.winner();
-                                it->payoff += winner ? 1 : -1;
+                                // set payoff from the perspective of the player
+                                // whose turn led to this state
+                                bool won = it->game.current_opponent()
+                                           == terminal.winner();
+                                it->payoff += won ? 1 : -1;
                         }
                 }
         }

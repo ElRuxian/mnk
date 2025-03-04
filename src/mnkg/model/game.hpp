@@ -58,10 +58,10 @@ public:
         }
 
         player::index
-        rival(player::index player) const
+        current_opponent() const
         {
                 static_assert(player_count() == 2);
-                return (player + 1) % player_count();
+                return (current_player() + 1) % player_count();
         }
 
         bool
