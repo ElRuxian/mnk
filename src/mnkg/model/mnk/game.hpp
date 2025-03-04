@@ -65,37 +65,31 @@ public:
         }
 
         const struct settings::rules &
-        get_rules() const noexcept
+        rules() const noexcept
         {
                 return rules_;
         }
 
         inline const board &
-        get_board() const noexcept
+        board() const noexcept
         {
                 return board_;
         }
 
         const result &
-        get_result() const noexcept
+        result() const noexcept
         {
                 assert(result_.has_value());
                 return result_.value();
         }
 
-        static constexpr size_t
-        get_player_count() noexcept
-        {
-                return settings::player_count;
-        }
-
         class builder;
 
 private:
-        board                  board_;
-        size_t                 turn_   = 0;
-        std::optional<result>  result_ = std::nullopt;
-        struct settings::rules rules_;
+        mnk::board                 board_;
+        size_t                     turn_   = 0;
+        std::optional<mnk::result> result_ = std::nullopt;
+        struct settings::rules     rules_;
 
         virtual std::vector<action>
         playable_actions_() const override
@@ -103,7 +97,7 @@ private:
                 auto playable_actions = std::vector<action>();
                 if (is_over_())
                         return playable_actions;
-                for (const auto &pos : coords(get_board())) {
+                for (const auto &pos : coords(board())) {
                         if (is_playable_(pos))
                                 playable_actions.push_back(pos);
                 }
@@ -113,23 +107,20 @@ private:
         virtual payoff_t
         payoff_(player::indice player) const override
         {
-                if (!is_over_())
+                if (!is_over_() || is_draw())
                         return 0;
-                const auto &result = get_result();
-                if (!is_win(result))
-                        return 0;
-                auto winner   = std::get<win>(result).player;
-                auto max_turn = get_board().get_cell_count();
-                auto payoff   = 1 + max_turn - turn_;
-                return winner == player ? payoff : -2 * payoff;
+                auto winner   = std::get<win>(result()).player;
+                auto max_turn = board().get_cell_count();
+                auto payoff   = 1 + max_turn - turn_; // favor faster wins
+                return winner == player ? payoff : -payoff;
         }
 
         virtual bool
         is_playable_(const action &position) const override
         {
 
-                const auto &board  = get_board();
-                const auto &filter = get_rules().play_filter;
+                const auto &board  = this->board();
+                const auto &filter = rules().play_filter;
                 const auto &player = current_player();
 
                 return within(board, position) && !board[position].has_value()

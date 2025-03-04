@@ -49,7 +49,7 @@ reprint_game(const auto &game, const auto &title)
         std::cout << "\033[2J";   // Clear the entire screen
         std::cout << "\033[1;1H"; // Move the cursor back to the top-left
         std::cout << title << "!\n";
-        std::cout << game.get_board() << std::endl;
+        std::cout << game.board() << std::endl;
 }
 
 void
@@ -109,7 +109,7 @@ cli_game()
                 }
         }
         reprint_game(game, game_options[chosen_game_indice - 1].title);
-        auto result = game.get_result();
+        auto result = game.result();
         if (is_tie(result))
                 std::println("Tie!");
         else {

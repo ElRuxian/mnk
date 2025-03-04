@@ -18,7 +18,7 @@ bool
 gravity::allowed_(const game &game, const player::indice &player,
                   const action &action)
 {
-        return action == fall_from(game.get_board(), action, direction_);
+        return action == fall_from(game.board(), action, direction_);
 }
 
 bool
@@ -30,7 +30,7 @@ proximity::allowed_(const game &game, const player::indice &player,
         constexpr auto directions = std::to_array<board::position>(
             { { 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 } });
         const auto &pos   = action;
-        const auto &board = game.get_board();
+        const auto &board = game.board();
         for (const auto &dir : directions)
                 if (board[pos + dir].has_value())
                         return true;
