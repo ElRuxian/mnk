@@ -31,7 +31,7 @@ public:
                 return (*std::max_element(root_->children.begin(),
                                           root_->children.end(),
                                           [](const auto &a, const auto &b) {
-                                                  return compare_(*a, *b);
+                                                  return a->visits < b->visits;
                                           }))
                     ->action;
         }
@@ -95,12 +95,6 @@ private:
                         return std::numeric_limits<float>::infinity();
         }
 
-        static auto
-        compare_(const Node &lhs, const Node &rhs)
-        {
-                return rate_(lhs) < rate_(rhs);
-        }
-
         Node &
         select_()
         {
@@ -112,7 +106,7 @@ private:
                                    node->children.begin(),
                                    node->children.end(),
                                    [](const auto &a, const auto &b) {
-                                           return compare_(*a, *b);
+                                           return rate_(*a) < rate_(*b);
                                    })
                                    ->get();
                 }
