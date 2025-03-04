@@ -6,6 +6,6 @@
 
 namespace mnkg::model::mnk {
 
-using board = grid<std::optional<player::indice> >;
+using board = grid<std::optional<player::index> >;
 
 }

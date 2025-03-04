@@ -116,7 +116,7 @@ private:
                        && (!filter || filter->allowed(*this, player, position));
         }
 
-        virtual std::optional<player::indice>
+        virtual std::optional<player::index>
         winner_() const override
         {
                 return is_win(*result_)

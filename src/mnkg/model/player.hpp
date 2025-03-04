@@ -5,7 +5,7 @@
 namespace mnkg::model {
 
 struct player {
-        using indice = std::size_t; // for code clarity
+        using index = std::size_t; // for code clarity
 };
 
 } // namespace mnkg::model

@@ -15,14 +15,14 @@ fall_from(const board &board, board::position pos, board::position dir)
 }
 
 bool
-gravity::allowed_(const game &game, const player::indice &player,
+gravity::allowed_(const game &game, const player::index &player,
                   const action &action)
 {
         return action == fall_from(game.board(), action, direction_);
 }
 
 bool
-proximity::allowed_(const game &game, const player::indice &player,
+proximity::allowed_(const game &game, const player::index &player,
                     const action &action)
 {
         assert(range_ == 1 && "limited implementation");

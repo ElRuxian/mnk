@@ -12,13 +12,13 @@ namespace play_filter {
 class base {
 private:
         virtual bool
-        allowed_(const game &game, const player::indice &player,
+        allowed_(const game &game, const player::index &player,
                  const action &action)
             = 0;
 
 public:
         bool
-        allowed(const game &game, const player::indice &player,
+        allowed(const game &game, const player::index &player,
                 const action &action)
         {
                 return allowed_(game, player, action);
@@ -33,7 +33,7 @@ public:
 class bypass : public play_filter::base {
 private:
         bool
-        allowed_(const game &game, const player::indice &player,
+        allowed_(const game &game, const player::index &player,
                  const action &action) override
         {
                 return true;
@@ -70,7 +70,7 @@ private:
         board::position direction_;
 
         bool
-        allowed_(const game &game, const player::indice &player,
+        allowed_(const game &game, const player::index &player,
                  const action &action) override;
 };
 
@@ -91,7 +91,7 @@ private:
         size_t range_;
 
         bool
-        allowed_(const game &game, const player::indice &player,
+        allowed_(const game &game, const player::index &player,
                  const action &action) override;
 };
 

@@ -9,7 +9,7 @@
 namespace mnkg::model::mnk {
 
 struct win {
-        player::indice        player;
+        player::index         player;
         line<board::position> line;
 };
 

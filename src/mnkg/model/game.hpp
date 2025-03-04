@@ -50,24 +50,24 @@ public:
                 return 2;
         }
 
-        player::indice
+        player::index
         current_player() const
         {
                 // restricted to round-robin turn order
                 return turn() % player_count();
         }
 
-        player::indice
-        rival(player::indice player) const
+        player::index
+        rival(player::index player) const
         {
                 static_assert(player_count() == 2);
                 return (player + 1) % player_count();
         }
 
         bool
-        is_legal(player::indice player) const
+        is_legal(player::index player) const
         {
-                static_assert(!std::is_signed_v<player::indice>);
+                static_assert(!std::is_signed_v<player::index>);
                 return player < player_count();
         }
 
@@ -87,7 +87,7 @@ public:
                 return over;
         }
 
-        std::optional<player::indice>
+        std::optional<player::index>
         winner() const
         {
                 assert(is_over());
@@ -120,7 +120,7 @@ private:
         virtual std::vector<Action>
         playable_actions_() const = 0;
 
-        virtual std::optional<player::indice> // nullopt for draw
+        virtual std::optional<player::index> // nullopt for draw
         winner_() const = 0;
 
         virtual bool
