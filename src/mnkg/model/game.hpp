@@ -1,8 +1,21 @@
+// Interface of a combinatorial game: a zero-sum, turn-based game with perfect
+// information and deterministic gameplay.
+//
+// Each implementation defines a specific game.
+// Each instance represents a specific game state, modifable by playing.
+// To play, some action is input. Action type is a template parameter.
+// Each play is implicitly made as the current player.
+//
+// Note that this interface enforces constraints such as a fixed player count
+// and turn order. This is intentional, as it allows for more efficient
+// algorithms and data structures while still aligning with the project's goals.
+
 #pragma once
 
 #include <algorithm>
 #include <cassert>
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 #include "player.hpp"
@@ -10,148 +23,145 @@
 namespace mnkg::model::game {
 
 template <typename Action>
-class base {
+class combinatorial {
 public:
-        using action = Action;
+        using action   = Action; // TODO: rename to action_t
+        using payoff_t = std::int8_t;
 
-        struct move {
-                player::indice player;
-                action         action;
+        combinatorial()          = default;
+        virtual ~combinatorial() = default;
 
-                bool
-                operator==(const move &other) const
-                    = default;
-        };
+        virtual std::unique_ptr<combinatorial>
+        clone() const;
+
+protected:
+        size_t turn_;
 
 public:
-        virtual ~base() = default;
-
-        base(size_t player_count) : initial_player_count_(player_count)
+        size_t
+        turn() const
         {
-                assert(initial_player_count_ > 0);
+                return turn_;
         }
 
-        std::unique_ptr<base>
-        clone() const
+        consteval static size_t
+        player_count()
         {
-                return clone_();
+                // restricted to two-player games
+                return 2;
         }
 
-        inline bool
-        is_legal_player(player::indice player) const
+        player::indice
+        current_player() const
         {
-                return player < initial_player_count_;
+                // restricted to round-robin turn order
+                return turn() % player_count();
         }
 
-        inline float
-        payoff(player::indice player) const
+        player::indice
+        rival(player::indice player) const
         {
-                assert(is_legal_player(player));
-                return payoff_(player);
+                static_assert(player_count() == 2);
+                return (player + 1) % player_count();
+        }
+
+        bool
+        is_legal(player::indice player) const
+        {
+                static_assert(!std::is_signed_v<player::indice>);
+                return player < player_count();
+        }
+
+        inline payoff_t
+        payoff(player::indice player) const // TODO: rename to score
+        {
+                auto payoff = payoff_(player);
+                assert(payoff == -payoff_(rival(player))); // zero-sum
+                return payoff;
         }
 
         inline std::vector<Action> // factual until next play
-        legal_actions(player::indice player) const
+        legal_actions() const      // TODO: rename to playable_actions
         {
-                assert(is_legal_player(player));
-                auto actions = legal_actions_(player);
+                auto actions = legal_actions_();
                 assert(!is_over() || actions.empty());
                 return actions;
         }
 
-        inline std::vector<move> // factual until next play
-        legal_moves() const
-        {
-                std::vector<move> moves;
-                for (player::indice i = 0; i < initial_player_count_; ++i) {
-                        const auto &actions = legal_actions(i);
-                        moves.reserve(moves.size() + actions.size());
-                        for (const auto &action : actions)
-                                moves.emplace_back(i, action);
-                }
-                return moves;
-        }
-
         bool
-        is_playable(player::indice player, const action &action) const
-        {
-                bool playable = is_playable_(player, action);
-                assert(playable == base::is_playable_(player, action));
-                return playable;
-        }
-
-        inline void
-        play(player::indice player, const action &action)
-        {
-                assert(is_playable(player, action));
-                play_(player, action);
-        }
-
-        inline void
-        play(const move &move)
-        {
-                play(move.player, move.action);
-        }
-
-        virtual bool
         is_over() const
         {
                 bool over = is_over_();
-                assert(over == base::is_over_());
+                assert(over == combinatorial::is_over_());
                 return over;
         }
 
-protected:
-        std::size_t initial_player_count_;
+        std::optional<player::indice>
+        winner() const
+        {
+                assert(is_over());
+                auto winner = winner_();
+                assert(winner == combinatorial::winner_());
+                return winner;
+        }
+
+        bool
+        is_draw() const
+        {
+                return is_over() && !winner().has_value();
+        }
+
+        inline void
+        play(const action &action)
+        {
+                assert(is_playable(action));
+                play_(action);
+                turn_++;
+        }
+
+        bool
+        is_playable(const action &action) const
+        {
+                bool playable = is_playable_(action);
+                assert(playable == combinatorial::is_playable_(action));
+                return playable;
+        }
 
 private:
-        virtual std::unique_ptr<base>
-        clone_() const = 0;
-
         virtual std::vector<Action>
-        legal_actions_(player::indice player) const = 0;
+        legal_actions_() const = 0;
 
-        virtual float
+        virtual payoff_t
         payoff_(player::indice player) const
             = 0;
 
+        virtual std::optional<player::indice>
+        winner_() const
+        {
+                if (!is_over())
+                        return std::nullopt;
+                payoff_t payoffs[player_count()] = { payoff(0), payoff(1) };
+                if (payoffs[0] == payoffs[1])
+                        return std::nullopt;
+                return payoffs[0] > payoffs[1] ? 0 : 1;
+        }
+
         virtual bool
-        is_playable_(player::indice player, const action &action) const
+        is_playable_(const action &action) const
         {
                 using std::ranges::contains;
-                return is_legal_player(player)
-                       && contains(legal_actions_(player), action);
+                return contains(legal_actions_(), action);
         }
 
         virtual void
-        play_(player::indice player, const action &action)
+        play_(const action &action)
             = 0;
 
         virtual bool
         is_over_() const
         {
-                for (player::indice i = 0; i < initial_player_count_; ++i)
-                        if (!legal_actions_(i).empty())
-                                return false;
-                return true;
+                return legal_actions_().empty();
         }
-};
-
-template <typename Action>
-class turn_based : public virtual base<Action> {
-public:
-        inline player::indice
-        current_player() const
-        {
-                auto player = current_player_();
-                assert(base<Action>::is_legal_player(player));
-                return player;
-        }
-
-private:
-        virtual player::indice
-        current_player_() const
-            = 0;
 };
 
 } // namespace mnkg::model::game

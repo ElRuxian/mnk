@@ -14,17 +14,17 @@ namespace mnkg::model::mcts {
 
 // clang-format off
 template <class Game, typename Action = typename Game::action>
-        requires std::is_base_of_v<model::game::turn_based<Action>, Game>
+        requires std::is_base_of_v<model::game::combinatorial<Action>, Game>
 class mcts { // clang-format on
 public:
         mcts(Game game) :
                 root_{ std::make_unique<Node>(std::move(
-                    Node{ .game = game, .untried = game.legal_moves() })) },
+                    Node{ .game = game, .untried = game.legal_actions() })) },
                 rng_{ std::random_device{}() }
         {
         }
 
-        Game::move
+        Game::action
         evaluate()
         {
                 assert(!root_->children.empty());
@@ -33,7 +33,7 @@ public:
                                           [](const auto &a, const auto &b) {
                                                   return compare_(*a, *b);
                                           }))
-                    ->move;
+                    ->action;
         }
 
         void
@@ -51,32 +51,33 @@ public:
         }
 
         void
-        advance(const Game::move &move)
+        advance(const Game::action &action)
         {
-                auto it = std::find_if(root_->children.begin(),
-                                       root_->children.end(),
-                                       [&move](const auto &node_ptr) {
-                                               return node_ptr->move == move;
-                                       });
+                auto it
+                    = std::find_if(root_->children.begin(),
+                                   root_->children.end(),
+                                   [&action](const auto &node_ptr) {
+                                           return node_ptr->action == action;
+                                   });
                 if (it != root_->children.end()) {
                         root_         = std::move(*it);
                         root_->parent = nullptr;
                 } else {
-                        root_->game.play(move);
-                        root_->untried = root_->game.legal_moves();
+                        root_->game.play(action);
+                        root_->untried = root_->game.legal_actions();
                         root_->children.clear();
                 }
         }
 
 private:
         struct Node {
-                Game::move                          move;
+                Game::action                        action;
                 Game                                game;
                 size_t                              visits = 0;
                 float                               payoff = 0;
                 Node                               *parent = nullptr;
                 std::vector<std::unique_ptr<Node> > children;
-                std::vector<typename Game::move>    untried;
+                std::vector<typename Game::action>  untried;
         };
         std::unique_ptr<Node> root_;
         std::mt19937          rng_;
@@ -133,14 +134,14 @@ private:
         expand_(Node &parent)
         {
                 assert(!parent.untried.empty());
-                auto move = parent.untried.back();
+                auto action = parent.untried.back();
                 parent.untried.pop_back();
                 auto game{ Game(parent.game) };
-                game.play(move);
-                auto untried = game.legal_moves();
+                game.play(action);
+                auto untried = game.legal_actions();
                 std::shuffle(untried.begin(), untried.end(), rng_);
                 auto child = std::make_unique<Node>(
-                    std::move(Node{ .move    = std::move(move),
+                    std::move(Node{ .action  = std::move(action),
                                     .game    = std::move(game),
                                     .parent  = &parent,
                                     .untried = std::move(untried) }));
@@ -154,12 +155,12 @@ private:
                 // Random playout
                 auto game = node.game;
                 while (!game.is_over()) {
-                        auto moves = game.legal_moves();
-                        assert(!moves.empty());
+                        auto actions = game.legal_actions();
+                        assert(!actions.empty());
                         std::uniform_int_distribution<size_t> distribution(
-                            0, moves.size() - 1);
-                        const auto &move = moves[distribution(rng_)];
-                        game.play(move);
+                            0, actions.size() - 1);
+                        const auto &action = actions[distribution(rng_)];
+                        game.play(action);
                 };
                 return game;
         }
@@ -177,9 +178,9 @@ private:
         void
         iterate_()
         {
-                auto &selected = select_();
-                Node *leaf;
-                Game  terminal;
+                auto               &selected = select_();
+                Node               *leaf;
+                std::optional<Game> terminal;
                 if (selected.game.is_over()) {
                         leaf     = &selected;
                         terminal = selected.game;
@@ -187,7 +188,7 @@ private:
                         leaf     = &expand_(selected);
                         terminal = simulate_(*leaf);
                 }
-                auto payoffs = payoffs_(terminal);
+                auto payoffs = payoffs_(*terminal);
                 backpropagate_(*leaf, payoffs);
         }
 };

@@ -93,11 +93,9 @@ cli_game()
                         std::cout << "Column: ", std::cin >> pos[1],
                             std::cout << "\n";
 
-                        if (game.is_playable(player, pos)) {
-                                game.play(player, pos);
-                                mcts.advance(
-                                    { .player = player, .action = pos });
-
+                        if (game.is_playable(pos)) {
+                                game.play(pos);
+                                mcts.advance(pos);
                         } else {
                                 std::println("Invalid move!"), sleep(1);
                         }

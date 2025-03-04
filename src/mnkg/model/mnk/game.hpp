@@ -12,7 +12,7 @@
 
 namespace mnkg::model::mnk {
 
-class game : public model::game::turn_based<action> {
+class game : public model::game::combinatorial<action> {
 public:
         struct settings {
                 static const size_t player_count = 2;
@@ -27,14 +27,11 @@ public:
         };
 
         game(settings &&settings) :
-                model::game::base<action>(settings.player_count),
                 board_(settings.board.size), rules_(std::move(settings.rules))
         {
         }
 
-        // TODO: improve design (poor maintainability)
         game(const game &other) :
-                model::game::base<action>(other.initial_player_count_),
                 board_(other.board_), turn_(other.turn_),
                 result_(other.result_),
                 rules_({ .line_span   = other.rules_.line_span,
@@ -45,9 +42,12 @@ public:
         {
         }
 
-        game() : game(settings{}) {}
+        virtual std::unique_ptr<game::combinatorial>
+        clone() const override
+        {
+                return std::make_unique<game>(*this);
+        }
 
-        // TODO: improve design (poor maintainability)
         friend void
         swap(game &lhs, game &rhs)
         {
@@ -55,8 +55,6 @@ public:
                 swap(lhs.board_, rhs.board_);
                 swap(lhs.turn_, rhs.turn_);
                 swap(lhs.result_, rhs.result_);
-                swap(lhs.rules_, rhs.rules_);
-                swap(lhs.initial_player_count_, rhs.initial_player_count_);
         }
 
         game &
@@ -76,12 +74,6 @@ public:
         get_board() const noexcept
         {
                 return board_;
-        }
-
-        size_t
-        get_turn() const noexcept
-        {
-                return turn_;
         }
 
         const result &
@@ -106,27 +98,19 @@ private:
         struct settings::rules rules_;
 
         virtual std::vector<action>
-        legal_actions_(player::indice player) const override
+        legal_actions_() const override
         {
                 auto legal_actions = std::vector<action>();
                 if (is_over_())
                         return legal_actions;
-                if (player != current_player())
-                        return legal_actions;
                 for (const auto &pos : coords(get_board())) {
-                        if (is_playable_(player, pos))
+                        if (is_playable_(pos))
                                 legal_actions.push_back(pos);
                 }
                 return legal_actions;
         };
 
-        virtual std::unique_ptr<base>
-        clone_() const override
-        {
-                return std::make_unique<game>(*this);
-        }
-
-        virtual float
+        virtual payoff_t
         payoff_(player::indice player) const override
         {
                 if (!is_over_())
@@ -141,23 +125,28 @@ private:
         }
 
         virtual bool
-        is_playable_(player::indice player,
-                     const action  &position) const override
+        is_playable_(const action &position) const override
         {
 
                 const auto &board  = get_board();
                 const auto &filter = get_rules().play_filter;
+                const auto &player = current_player();
 
                 return within(board, position) && !board[position].has_value()
-                       && player == current_player()
                        && (!filter || filter->allowed(*this, player, position));
         }
 
-        virtual void
-        play_(player::indice player, const action &position) override
+        virtual std::optional<player::indice>
+        winner_() const override
         {
+                return std::get<win>(result_.value()).player;
+        }
 
-                board_[position] = player;
+        virtual void
+        play_(const action &position) override
+        {
+                const auto &player = current_player();
+                board_[position]   = player;
                 turn_++;
                 if (auto line = find_line(board_, position)) {
                         auto len = length<metric::chebyshev>(line.value()) + 1;
@@ -173,12 +162,6 @@ private:
         is_over_() const override
         {
                 return result_.has_value();
-        }
-
-        virtual player::indice
-        current_player_() const noexcept override
-        {
-                return turn_ % initial_player_count_;
         }
 };
 
