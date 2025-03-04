@@ -6,7 +6,6 @@
 #include <memory>
 #include <model/game.hpp>
 #include <model/player.hpp>
-#include <print>
 #include <random>
 #include <vector>
 
@@ -92,7 +91,7 @@ private:
                 // UCT (Upper Confidence Bound 1 applied to trees)
                 assert(node.parent);
                 if (node.visits > 0)
-                        return node.payoff / node.visits
+                        return static_cast<float>(node.payoff) / node.visits
                                + std::sqrt(2 * std::log(node.parent->visits)
                                            / node.visits);
                 else
