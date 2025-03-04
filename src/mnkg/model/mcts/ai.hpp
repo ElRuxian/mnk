@@ -18,8 +18,8 @@ template <class Game, typename Action = typename Game::action>
 class mcts { // clang-format on
 public:
         mcts(Game game) :
-                root_{ std::make_unique<Node>(std::move(
-                    Node{ .game = game, .untried = game.legal_actions() })) },
+                root_{ std::make_unique<Node>(std::move(Node{
+                    .game = game, .untried = game.playable_actions() })) },
                 rng_{ std::random_device{}() }
         {
         }
@@ -64,7 +64,7 @@ public:
                         root_->parent = nullptr;
                 } else {
                         root_->game.play(action);
-                        root_->untried = root_->game.legal_actions();
+                        root_->untried = root_->game.playable_actions();
                         root_->children.clear();
                 }
         }
@@ -138,7 +138,7 @@ private:
                 parent.untried.pop_back();
                 auto game{ Game(parent.game) };
                 game.play(action);
-                auto untried = game.legal_actions();
+                auto untried = game.playable_actions();
                 std::shuffle(untried.begin(), untried.end(), rng_);
                 auto child = std::make_unique<Node>(
                     std::move(Node{ .action  = std::move(action),
@@ -155,7 +155,7 @@ private:
                 // Random playout
                 auto game = node.game;
                 while (!game.is_over()) {
-                        auto actions = game.legal_actions();
+                        auto actions = game.playable_actions();
                         assert(!actions.empty());
                         std::uniform_int_distribution<size_t> distribution(
                             0, actions.size() - 1);

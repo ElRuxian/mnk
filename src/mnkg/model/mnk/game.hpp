@@ -98,16 +98,16 @@ private:
         struct settings::rules rules_;
 
         virtual std::vector<action>
-        legal_actions_() const override
+        playable_actions_() const override
         {
-                auto legal_actions = std::vector<action>();
+                auto playable_actions = std::vector<action>();
                 if (is_over_())
-                        return legal_actions;
+                        return playable_actions;
                 for (const auto &pos : coords(get_board())) {
                         if (is_playable_(pos))
-                                legal_actions.push_back(pos);
+                                playable_actions.push_back(pos);
                 }
-                return legal_actions;
+                return playable_actions;
         };
 
         virtual payoff_t

@@ -25,7 +25,7 @@ namespace mnkg::model::game {
 template <typename Action>
 class combinatorial {
 public:
-        using action   = Action; // TODO: rename to action_t
+        using action   = Action;
         using payoff_t = std::int8_t;
 
         combinatorial()          = default;
@@ -73,7 +73,7 @@ public:
         }
 
         inline payoff_t
-        payoff(player::indice player) const // TODO: rename to score
+        payoff(player::indice player) const
         {
                 auto payoff = payoff_(player);
                 assert(payoff == -payoff_(rival(player))); // zero-sum
@@ -81,9 +81,9 @@ public:
         }
 
         inline std::vector<Action> // factual until next play
-        legal_actions() const      // TODO: rename to playable_actions
+        playable_actions() const
         {
-                auto actions = legal_actions_();
+                auto actions = playable_actions_();
                 assert(!is_over() || actions.empty());
                 return actions;
         }
@@ -129,7 +129,7 @@ public:
 
 private:
         virtual std::vector<Action>
-        legal_actions_() const = 0;
+        playable_actions_() const = 0;
 
         virtual payoff_t
         payoff_(player::indice player) const
@@ -150,7 +150,7 @@ private:
         is_playable_(const action &action) const
         {
                 using std::ranges::contains;
-                return contains(legal_actions_(), action);
+                return contains(playable_actions_(), action);
         }
 
         virtual void
@@ -160,7 +160,7 @@ private:
         virtual bool
         is_over_() const
         {
-                return legal_actions_().empty();
+                return playable_actions_().empty();
         }
 };
 
