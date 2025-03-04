@@ -18,8 +18,8 @@ template <class Game, typename Action = typename Game::action>
 class mcts { // clang-format on
 public:
         mcts(Game game) :
-                root_{ std::make_unique<Node>(std::move(Node{
-                    .game = game, .untried = game.playable_actions() })) },
+                root_{ std::make_unique<Node>(
+                    Node{ .game = game, .untried = game.playable_actions() }) },
                 rng_{ std::random_device{}() }
         {
         }
@@ -130,10 +130,10 @@ private:
                 auto untried = game.playable_actions();
                 std::shuffle(untried.begin(), untried.end(), rng_);
                 auto child = std::make_unique<Node>(
-                    std::move(Node{ .action  = std::move(action),
-                                    .game    = std::move(game),
-                                    .parent  = &parent,
-                                    .untried = std::move(untried) }));
+                    Node{ .action  = std::move(action),
+                          .game    = std::move(game),
+                          .parent  = &parent,
+                          .untried = std::move(untried) });
                 parent.children.emplace_back(std::move(child));
                 return *parent.children.back();
         }
