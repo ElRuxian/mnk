@@ -71,10 +71,10 @@ public:
 
 private:
         struct Node {
-                Game::action                        action;
-                Game                                game;
+                Game::action                        action; // that lead here
+                Game                                game;   // game-state
                 size_t                              visits = 0;
-                float                               payoff = 0;
+                Game::payoff_t                      payoff = 0; // accumulated
                 Node                               *parent = nullptr;
                 std::vector<std::unique_ptr<Node> > children;
                 std::vector<typename Game::action>  untried;
@@ -99,17 +99,6 @@ private:
         compare_(const Node &lhs, const Node &rhs)
         {
                 return rate_(lhs) < rate_(rhs);
-        }
-
-        // TODO: move to game
-        std::vector<float> // payoff per player
-        payoffs_(const Game &game)
-        {
-                std::vector<float> payoffs;
-                payoffs.reserve(game.get_player_count());
-                for (size_t i = 0; i < game.get_player_count(); ++i)
-                        payoffs.push_back(game.payoff(i));
-                return payoffs;
         }
 
         Node &
@@ -166,7 +155,7 @@ private:
         }
 
         void
-        backpropagate_(Node &node, std::vector<float> payoffs)
+        backpropagate_(Node &node, auto payoffs)
         {
                 assert(payoffs.size() == node.game.get_player_count());
                 for (Node *it = &node; it != nullptr; it = it->parent) {
@@ -188,8 +177,7 @@ private:
                         leaf     = &expand_(selected);
                         terminal = simulate_(*leaf);
                 }
-                auto payoffs = payoffs_(*terminal);
-                backpropagate_(*leaf, payoffs);
+                backpropagate_(*leaf, terminal->payoffs());
         }
 };
 

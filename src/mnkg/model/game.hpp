@@ -80,6 +80,15 @@ public:
                 return payoff;
         }
 
+        std::array<payoff_t, player_count()>
+        payoffs()
+        {
+                std::array<payoff_t, player_count()> payoffs;
+                for (size_t i = 0; i < player_count(); ++i)
+                        payoffs[i] = payoff(i);
+                return payoffs;
+        }
+
         inline std::vector<Action> // factual until next play
         playable_actions() const
         {
