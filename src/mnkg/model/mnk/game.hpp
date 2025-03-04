@@ -157,3 +157,7 @@ private:
 };
 
 } // namespace mnkg::model::mnk
+
+namespace mnkg::model::game {
+using mnk = model::mnk::game;
+}
