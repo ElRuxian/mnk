@@ -119,7 +119,9 @@ private:
         virtual std::optional<player::indice>
         winner_() const override
         {
-                return std::get<win>(result_.value()).player;
+                return is_win(*result_)
+                           ? std::make_optional(std::get<win>(*result_).player)
+                           : std::nullopt;
         }
 
         virtual void
