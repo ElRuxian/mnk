@@ -34,7 +34,16 @@ public:
         clone() const = 0;
 
 protected:
-        size_t turn_;
+        size_t turn_ = 0;
+
+        combinatorial(const combinatorial &other) : turn_(other.turn_) {}
+
+        friend void
+        swap(combinatorial &lhs, combinatorial &rhs)
+        {
+                using std::swap;
+                swap(lhs.turn_, rhs.turn_);
+        }
 
 public:
         size_t

@@ -32,7 +32,7 @@ public:
         }
 
         game(const game &other) :
-                board_(other.board_), turn_(other.turn_),
+                combinatorial(other), board_(other.board_),
                 result_(other.result_),
                 rules_({ .line_span   = other.rules_.line_span,
                          .overline    = other.rules_.overline,
@@ -51,10 +51,10 @@ public:
         friend void
         swap(game &lhs, game &rhs)
         {
-                using std::swap;
-                swap(lhs.board_, rhs.board_);
-                swap(lhs.turn_, rhs.turn_);
-                swap(lhs.result_, rhs.result_);
+                swap(static_cast<combinatorial &>(lhs),
+                     static_cast<combinatorial &>(rhs));
+                std::swap(lhs.board_, rhs.board_);
+                std::swap(lhs.result_, rhs.result_);
         }
 
         game &
@@ -87,7 +87,6 @@ public:
 
 private:
         mnk::board                 board_;
-        size_t                     turn_   = 0;
         std::optional<mnk::result> result_ = std::nullopt;
         struct settings::rules     rules_;
 
@@ -131,15 +130,15 @@ private:
         {
                 const auto &player = current_player();
                 board_[position]   = player;
-                turn_++;
                 if (auto line = find_line(board_, position)) {
                         auto len = length<metric::chebyshev>(line.value()) + 1;
                         if (rules_.overline ? len >= rules_.line_span
                                             : len == rules_.line_span)
                                 result_ = { win{ player, line.value() } };
                 }
-                if (turn_ == board_.get_cell_count() && !result_)
+                if ((turn() + 1) == board_.get_cell_count() && !result_)
                         result_ = { tie{} };
+                // turn_++; // incremented in combinatorial::play
         }
 
         virtual bool
