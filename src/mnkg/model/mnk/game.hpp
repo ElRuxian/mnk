@@ -107,6 +107,8 @@ private:
         virtual bool
         is_playable_(const action &position) const override
         {
+                if (is_over_())
+                        return false;
 
                 const auto &board  = this->board();
                 const auto &filter = rules().play_filter;
