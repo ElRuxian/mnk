@@ -31,7 +31,7 @@ public:
         virtual ~combinatorial() = default;
 
         virtual std::unique_ptr<combinatorial>
-        clone() const;
+        clone() const = 0;
 
 protected:
         size_t turn_;
