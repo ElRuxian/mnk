@@ -1,94 +1,142 @@
 #pragma once
 
 #include <algorithm>
-#include <chrono>
+#include <atomic>
+#include <cassert>
 #include <cmath>
+#include <limits>
 #include <memory>
 #include <model/game.hpp>
 #include <model/player.hpp>
+#include <mutex>
 #include <random>
+#include <thread>
 #include <vector>
 
 namespace mnkg::model::mcts {
 
 // clang-format off
 template <class Game, typename Action = typename Game::action>
-        requires std::is_base_of_v<model::game::combinatorial<Action>, Game>
+requires
+    std::is_base_of_v<model::game::combinatorial<Action>, Game> 
 class mcts { // clang-format on
 public:
         struct settings {
-                size_t exploration_factor = 2; // UCT constant
+                size_t exploration_factor  = 2; // UCT constant
+                size_t search_thread_count = 1;
         };
 
         mcts(Game game, settings settings = {}) :
                 root_{ std::make_unique<node>(
                     node{ .game = game, .untried = game.playable_actions() }) },
-                rng_{ std::random_device{}() }, settings_{ settings }
+                settings_{ settings }
         {
+                for (size_t i = 0; i < settings_.search_thread_count; ++i) {
+                        search_.workers.threads.emplace_back(&mcts::worker_,
+                                                             this);
+                }
+        }
+
+        ~mcts()
+        {
+                stop_searching();
+                for (auto &t : search_.workers.threads) {
+                        if (t.joinable()) {
+                                t.join();
+                        }
+                }
         }
 
         Game::action
         evaluate()
         {
+                std::lock_guard<std::mutex> lock(tree_mutex_);
                 assert(!root_->children.empty());
-                return (*std::max_element(root_->children.begin(),
-                                          root_->children.end(),
-                                          [](const auto &a, const auto &b) {
-                                                  return a->visits < b->visits;
-                                          }))
-                    ->action;
+                auto best
+                    = std::max_element(root_->children.begin(),
+                                       root_->children.end(),
+                                       [](const auto &a, const auto &b) {
+                                               return a->visits < b->visits;
+                                       });
+                return (*best)->action;
         }
 
         void
-        expand(std::chrono::seconds time_limit, size_t iterations_limit)
+        start_searching()
         {
-                using namespace std::chrono;
-                auto start = steady_clock::now();
-                int  i;
-                for (i = 0; i < iterations_limit; ++i) {
-                        auto now = steady_clock::now();
-                        if (duration_cast<seconds>(now - start) >= time_limit)
-                                break;
-                        iterate_();
+                search_.running.store(true);
+                search_.running.notify_all();
+        }
+
+        void
+        stop_searching()
+        {
+                search_.running.store(false);
+                search_.running.notify_all();
+                while (search_.workers.working.load() > 0) {
+                        search_.workers.working.wait(
+                            search_.workers.working.load());
                 }
         }
 
         void
         advance(const Game::action &action)
         {
-                auto it
-                    = std::find_if(root_->children.begin(),
-                                   root_->children.end(),
-                                   [&action](const auto &node_ptr) {
-                                           return node_ptr->action == action;
-                                   });
-                if (it != root_->children.end()) {
-                        root_         = std::move(*it);
-                        root_->parent = nullptr;
-                } else {
-                        root_->action = action;
-                        root_->game.play(action);
-                        root_->visits = 0;
-                        root_->payoff = 0;
-                        // root_->parent = nullptr; // already nullptr
-                        root_->children.clear();
-                        root_->untried = root_->game.playable_actions();
+                bool was_searching = search_.running.load();
+                stop_searching();
+                {
+                        std::lock_guard<std::mutex> lock(tree_mutex_);
+                        auto it = std::find_if(root_->children.begin(),
+                                               root_->children.end(),
+                                               [&action](const auto &node_ptr) {
+                                                       return node_ptr->action
+                                                              == action;
+                                               });
+                        if (it != root_->children.end()) {
+                                root_         = std::move(*it);
+                                root_->parent = nullptr;
+                        } else {
+                                root_->action = action;
+                                root_->game.play(action);
+                                root_->visits = 0;
+                                root_->payoff = 0;
+                                root_->children.clear();
+                                root_->untried = root_->game.playable_actions();
+                        }
                 }
+                if (was_searching)
+                        start_searching();
         }
 
 private:
         struct node {
-                Game::action                        action; // that lead here
-                Game                                game;   // game-state
-                size_t                              visits = 0;
-                int                                 payoff = 0; // accumulated
-                node                               *parent = nullptr;
+                Game::action action; // action that led here
+                Game         game;   // game state
+                size_t       visits = 0;
+                int          payoff = 0; // accumulated value
+                node        *parent = nullptr;
                 std::vector<std::unique_ptr<node> > children;
                 std::vector<typename Game::action>  untried;
         };
+
         std::unique_ptr<node> root_;
-        std::mt19937          rng_;
         settings              settings_;
+        struct {
+                struct {
+                        std::vector<std::thread> threads;
+                        std::atomic<size_t>      working{ 0 };
+                } workers;
+                std::atomic<bool> running{ false };
+        } search_;
+
+        mutable std::mutex tree_mutex_;
+
+        static std::mt19937 &
+        rng_()
+        {
+                thread_local std::mt19937 rng{ std::random_device{}() };
+                return rng;
+        }
 
         float
         rate_(const node &node)
@@ -105,34 +153,34 @@ private:
         }
 
         node &
-        select_()
+        select_(node &from)
         {
-                node *node = root_.get();
-                while (node->untried.empty()) {
-                        if (node->children.empty())
-                                break; // terminal node
-                        node->visits++;
-                        node->payoff--; // virtual loss
-                        node = std::max_element(
-                                   node->children.begin(),
-                                   node->children.end(),
-                                   [this](const auto &a, const auto &b) {
-                                           return rate_(*a) < rate_(*b);
-                                   })
-                                   ->get();
+                node *current = &from;
+                while (current->untried.empty() && !current->children.empty()) {
+                        current->visits++;
+                        current->payoff--; // apply virtual loss
+                        auto best_it = std::max_element(
+                            current->children.begin(),
+                            current->children.end(),
+                            [this](const auto &a, const auto &b) {
+                                    return rate_(*a) < rate_(*b);
+                            });
+                        current = best_it->get();
                 }
-                node->visits++;
-                node->payoff--; // virtual loss
-                return *node;
+                current->visits++;
+                current->payoff--; // virtual loss for the final node
+                return *current;
         }
 
         node &
         expand_(node &parent)
         {
                 assert(!parent.untried.empty());
+                auto                                 &rng = rng_();
                 std::uniform_int_distribution<size_t> distribution(
                     0, parent.untried.size() - 1);
-                swap(parent.untried.back(), parent.untried[distribution(rng_)]);
+                std::swap(parent.untried.back(),
+                          parent.untried[distribution(rng)]);
                 auto action = parent.untried.back();
                 parent.untried.pop_back();
                 auto game = parent.game;
@@ -146,19 +194,19 @@ private:
                 return *parent.children.back();
         }
 
-        Game // terminal state
+        Game
         simulate_(node &node)
         {
-                // Random playout
-                auto game = node.game;
+                auto  game = node.game;
+                auto &rng  = rng_();
                 while (!game.is_over()) {
                         auto actions = game.playable_actions();
                         assert(!actions.empty());
                         std::uniform_int_distribution<size_t> distribution(
                             0, actions.size() - 1);
-                        const auto &action = actions[distribution(rng_)];
+                        const auto &action = actions[distribution(rng)];
                         game.play(action);
-                };
+                }
                 return game;
         }
 
@@ -168,26 +216,47 @@ private:
                 for (auto *it = &node; it != nullptr; it = it->parent) {
                         it->payoff++; // remove virtual loss
                         if (!terminal.is_draw()) {
-                                // set payoff from the perspective of the player
-                                // whose turn led to this state
                                 bool won = it->game.current_opponent()
                                            == terminal.winner();
-                                it->payoff += won ? 1 : -1;
+                                it->payoff += (won ? 1 : -1);
                         }
                 }
         }
 
         void
-        iterate_()
+        iterate_(node &root)
         {
-                auto &selected = select_();
-                if (selected.game.is_over()) {
-                        backpropagate_(selected, selected.game);
-                } else {
-                        auto &leaf = expand_(selected);
-                        backpropagate_(leaf, simulate_(leaf));
+                node *selected;
+                {
+                        std::lock_guard<std::mutex> lock(tree_mutex_);
+                        selected = &select_(root);
+                        if (selected->game.is_over()) {
+                                backpropagate_(*selected, selected->game);
+                                return;
+                        }
+                        selected = &expand_(*selected);
+                }
+                Game simulation_result = simulate_(*selected);
+                {
+                        std::lock_guard<std::mutex> lock(tree_mutex_);
+                        backpropagate_(*selected, simulation_result);
+                }
+        }
+
+        void
+        worker_()
+        {
+                while (true) {
+                        search_.running.wait(false);
+                        search_.workers.working.fetch_add(1);
+                        while (search_.running.load()) {
+                                iterate_(*root_);
+                        }
+                        search_.workers.working.fetch_sub(1);
+                        search_.workers.working.notify_all();
                 }
         }
 };
 
 } // namespace mnkg::model::mcts
+

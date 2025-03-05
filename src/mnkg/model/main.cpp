@@ -80,7 +80,9 @@ cli_game()
                         std::println("Invalid choice!");
         }
         auto &game = chosen_game.value();
-        auto  mcts = mnkg::model::mcts::mcts<class game>(game);
+        auto  mcts = mnkg::model::mcts::mcts<class game>(
+            game, { .search_thread_count = 5 });
+        mcts.start_searching();
         while (not game.is_over()) {
                 reprint_game(game, game_options[chosen_game_indice - 1].title);
 
@@ -100,9 +102,7 @@ cli_game()
                                 std::println("Invalid move!"), sleep(1);
                         }
                 } else {
-                        constexpr auto time_limit = std::chrono::seconds(3);
-                        constexpr auto iterations_limit = 10000000000;
-                        mcts.expand(time_limit, iterations_limit);
+                        sleep(2);
                         auto move = mcts.evaluate();
                         game.play(move);
                         mcts.advance(move);
