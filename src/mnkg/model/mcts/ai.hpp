@@ -111,6 +111,8 @@ private:
                 while (node->untried.empty()) {
                         if (node->children.empty())
                                 break; // terminal node
+                        node->visits++;
+                        node->payoff--; // virtual loss
                         node = std::max_element(
                                    node->children.begin(),
                                    node->children.end(),
@@ -119,6 +121,8 @@ private:
                                    })
                                    ->get();
                 }
+                node->visits++;
+                node->payoff--; // virtual loss
                 return *node;
         }
 
@@ -162,7 +166,7 @@ private:
         backpropagate_(node &node, Game terminal)
         {
                 for (auto *it = &node; it != nullptr; it = it->parent) {
-                        it->visits++;
+                        it->payoff++; // remove virtual loss
                         if (!terminal.is_draw()) {
                                 // set payoff from the perspective of the player
                                 // whose turn led to this state
