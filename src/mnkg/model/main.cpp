@@ -80,9 +80,8 @@ cli_game()
                         std::println("Invalid choice!");
         }
         auto &game = chosen_game.value();
-        auto  mcts = mnkg::model::mcts::mcts<class game>(
-            game, { .search_thread_count = 5 });
-        mcts.start_searching();
+        auto  mcts = mnkg::model::mcts::ai<class game>(
+            game, { .worker_count = std::thread::hardware_concurrency() });
         while (not game.is_over()) {
                 reprint_game(game, game_options[chosen_game_indice - 1].title);
 
