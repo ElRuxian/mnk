@@ -27,6 +27,7 @@ public:
         struct hyperparameters {
                 size_t leaf_parallelization = 1; // simulations per iteration
                 size_t exploration          = std::sqrt(2); // UCT constant
+                std::optional<size_t> max_depth = std::nullopt;
         };
 
         ai(Game game, hyperparameters hparams = {}) :
@@ -38,6 +39,7 @@ public:
                 } }
         {
                 assert(hparams.leaf_parallelization > 0);
+                assert(!hparams.max_depth || *hparams.max_depth > 0);
         }
 
         ~ai()
@@ -122,20 +124,29 @@ private:
         tree::node &
         select_(const tree &tree)
         {
-                auto *it = tree.root.get();
-                while (!should_select_(*it))
+                auto        *it        = tree.root.get();
+                size_t       depth     = 0;
+                const size_t max_depth = hyperparameters_.max_depth.value_or(
+                    std::numeric_limits<size_t>::max());
+
+                while (depth + 1 < max_depth && !should_select_(*it)) {
                         it = &next_(*it);
+                        depth++;
+                }
+
                 return *it;
         }
 
         bool
         should_select_(const tree::node &node)
         {
-                bool terminal   = node.game.is_over();
+                bool terminal = node.game.is_over();
+                bool parent   = !node.children.empty();
+                assert(not(terminal && parent));
                 bool expandable = !node.untried.empty();
                 bool rand = std::uniform_int_distribution<int>(0, 1)(rng_);
 
-                return terminal || (expandable && rand);
+                return terminal || (expandable && (!parent || rand));
         }
 
         inline tree::node &
@@ -154,7 +165,6 @@ private:
         {
                 // pick random untried action
                 assert(!parent.untried.empty());
-                assert(!parent.game.is_over());
                 std::uniform_int_distribution<size_t> distribution(
                     0, parent.untried.size() - 1);
                 std::swap(parent.untried.back(),
