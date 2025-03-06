@@ -32,7 +32,7 @@ public:
         ai(Game game, hyperparameters hparams = {}) :
                 tree_{ game }, hyperparameters_{ hparams },
                 worker_pool_{ hparams.leaf_parallelization },
-                search_thread_{ [this] {
+                rng_{ std::random_device{}() }, search_thread_{ [this] {
                         while (!stopping_.load(std::memory_order_relaxed))
                                 iterate_(tree_);
                 } }
@@ -103,6 +103,7 @@ private:
         asio::thread_pool   worker_pool_;
         std::thread         search_thread_;
         std::atomic<bool>   stopping_ = { false };
+        std::mt19937        rng_;
 
         float
         rate_(const tree::node &node)
@@ -122,9 +123,19 @@ private:
         select_(const tree &tree)
         {
                 auto *it = tree.root.get();
-                while (it->untried.empty() && !it->children.empty())
+                while (!should_select_(*it))
                         it = &next_(*it);
                 return *it;
+        }
+
+        bool
+        should_select_(const tree::node &node)
+        {
+                bool terminal   = node.game.is_over();
+                bool expandable = !node.untried.empty();
+                bool rand = std::uniform_int_distribution<int>(0, 1)(rng_);
+
+                return terminal || (expandable && rand);
         }
 
         inline tree::node &
@@ -141,16 +152,13 @@ private:
         tree::node &
         expand_(tree::node &parent)
         {
-                auto static thread_local rng
-                    = std::mt19937(std::random_device{}());
-
                 // pick random untried action
                 assert(!parent.untried.empty());
                 assert(!parent.game.is_over());
                 std::uniform_int_distribution<size_t> distribution(
                     0, parent.untried.size() - 1);
                 std::swap(parent.untried.back(),
-                          parent.untried[distribution(rng)]);
+                          parent.untried[distribution(rng_)]);
                 auto action = parent.untried.back();
                 parent.untried.pop_back();
 
