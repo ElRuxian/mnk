@@ -33,7 +33,7 @@ public:
         ai(Game game, hyperparameters hparams = {}) :
                 tree_{ game }, hyperparameters_{ hparams },
                 worker_pool_{ hparams.leaf_parallelization },
-                rng_{ std::random_device{}() }, search_thread_{ [this] {
+                search_thread_{ [this] {
                         while (!stopping_.load(std::memory_order_relaxed))
                                 iterate_(tree_);
                 } }
@@ -105,7 +105,6 @@ private:
         asio::thread_pool   worker_pool_;
         std::thread         search_thread_;
         std::atomic<bool>   stopping_ = { false };
-        std::mt19937        rng_;
 
         float
         rate_(const tree::node &node)
@@ -144,9 +143,8 @@ private:
                 bool parent   = !node.children.empty();
                 assert(not(terminal && parent));
                 bool expandable = !node.untried.empty();
-                bool rand = std::uniform_int_distribution<int>(0, 1)(rng_);
 
-                return terminal || (expandable && (!parent || rand));
+                return terminal || expandable;
         }
 
         inline tree::node &
@@ -163,12 +161,14 @@ private:
         tree::node &
         expand_(tree::node &parent)
         {
+                static thread_local std::mt19937 rng{ std::random_device{}() };
+
                 // pick random untried action
                 assert(!parent.untried.empty());
                 std::uniform_int_distribution<size_t> distribution(
                     0, parent.untried.size() - 1);
                 std::swap(parent.untried.back(),
-                          parent.untried[distribution(rng_)]);
+                          parent.untried[distribution(rng)]);
                 auto action = parent.untried.back();
                 parent.untried.pop_back();
 
