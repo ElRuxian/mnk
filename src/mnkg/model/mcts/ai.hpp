@@ -26,7 +26,7 @@ public:
 
         struct hyperparameters {
                 size_t leaf_parallelization = 1; // simulations per iteration
-                size_t exploration          = std::sqrt(2); // UCT constant
+                float  exploration          = std::sqrt(2); // UCT constant
                 std::optional<size_t> max_depth = std::nullopt;
         };
 
