@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <shared_mutex>
 #include <vector>
 
 namespace mnkg::model::mcts {
@@ -12,11 +11,10 @@ struct node {
         Game::action                        action;
         Game                                game;
         size_t                              visits;
-        int                                 payoff;
+        float                               payoff;
         node                               *parent;
         std::vector<std::unique_ptr<node> > children;
         std::vector<typename Game::action>  untried;
-        mutable std::shared_mutex           mutex;
 
         node(Game game) : game(game), untried(game.playable_actions()) {}
 

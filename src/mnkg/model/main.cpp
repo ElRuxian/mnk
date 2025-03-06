@@ -81,7 +81,8 @@ cli_game()
         }
         auto &game = chosen_game.value();
         auto  mcts = mnkg::model::mcts::ai<class game>(
-            game, { .worker_count = std::thread::hardware_concurrency() });
+            game,
+            { .leaf_parallelization = std::thread::hardware_concurrency() });
         while (not game.is_over()) {
                 reprint_game(game, game_options[chosen_game_indice - 1].title);
 
@@ -114,7 +115,9 @@ cli_game()
         else {
                 auto data = get<win>(result);
                 std::println("Player {} wins!", data.player);
-                std::println("Line: {}", data.line);
+                std::println("Line: {}\n", data.line);
+                std::println("MCTS saw {} posible futures in total.\n",
+                             mcts.simulations());
         }
 }
 
