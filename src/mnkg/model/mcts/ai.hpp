@@ -121,7 +121,7 @@ private:
                 }
         };
 
-        node_ptr &&
+        node_ptr
         make_node(auto &&...args)
         {
                 return { node_pool_.allocate(
