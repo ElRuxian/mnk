@@ -134,13 +134,13 @@ private:
                 std::mutex mutex;
         };
 
-        tree                tree_;
         hyperparameters     hyperparameters_;
         node_pool           node_pool_;
+        tree                tree_;
         std::atomic<size_t> iteration_count_ = { 0 };
+        std::atomic<bool>   stopping_        = { false };
         asio::thread_pool   worker_pool_;
         std::thread         search_thread_;
-        std::atomic<bool>   stopping_ = { false };
 
         float
         rate_(const node &node)
