@@ -33,7 +33,7 @@ public:
                 // objects. Otherwise, they are deleted without proper
                 // destruction.
                 assert(free_.size() == capacity_);
-                ::operator delete(memory_);
+                std::free(memory_);
         }
 
         inline std::size_t // maximum number o allocable objects
