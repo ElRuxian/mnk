@@ -1,9 +1,3 @@
-// This class implements a fixed-size pool of objects that can be allocated and
-// deallocated in constant time.
-// Speed was valued over safety and functionality, as the pool was made for its
-// use in a controlled, performance-critical context: the MCTS algorithm found
-// in this project.
-
 #include <cassert>
 #include <cstddef>
 #include <memory>
@@ -19,9 +13,10 @@ public:
         {
                 assert(capacity_ > 1 && "what are you doing?");
 
-                memory_ = std::make_unique<T[]>(capacity_);
-
+                allocator_ = std::allocator<T>();
+                memory_    = allocator_.allocate(capacity_);
                 assert(memory_ && "memory allocation failed");
+
                 for (std::size_t i = 0; i < capacity_; ++i)
                         free_.push_back(&memory_[i]);
         }
@@ -32,6 +27,7 @@ public:
                 // objects. Otherwise, they are deleted without proper
                 // destruction.
                 assert(free_.size() == capacity_);
+                allocator_.deallocate(memory_, capacity_);
         }
 
         inline std::size_t // maximum number of allocable objects
@@ -64,12 +60,11 @@ public:
         // WARNING: * Not thread-safe.
         //          * If pool is full, returns nullptr, or aborts (debug mode).
         {
-                assert(free_.size() > 0);
+                assert(not full() && "pool is full");
                 if (free_.empty())
                         return nullptr;
                 T *obj = free_.back();
-                free_.pop_back();
-                new (obj) T(std::forward<Args>(args)...);
+                allocator_.construct(obj, std::forward<Args>(args)...);
                 return obj;
         }
 
@@ -78,22 +73,24 @@ public:
         // WARNING: * Not thread-safe.
         {
                 assert(is_chunk_(obj) && "invalid pool-object");
-                obj->~T();
+                allocator_.destroy(obj);
                 free_.push_back(obj);
         }
 
 private:
-        std::unique_ptr<T[]> memory_; // Use unique_ptr for memory management
-        const std::size_t    capacity_;
-        std::vector<T *>     free_; // Track free objects as raw pointers
+        const std::size_t capacity_;
+        std::allocator<T> allocator_;
+        T                *memory_;
+        std::vector<T *>  free_;
 
         inline bool
         is_chunk_(const T *obj) const
         {
-                auto offset   = obj - &memory_[0];
-                bool inside   = offset >= 0 && offset < capacity_;
-                bool alligned = offset % sizeof(T) == 0;
-                return inside && alligned;
+                auto offset = obj - &memory_[0];
+                bool inside = offset >= 0 && offset < capacity_;
+                bool aligned
+                    = reinterpret_cast<std::uintptr_t>(obj) % alignof(T) == 0;
+                return inside && aligned;
         }
 
 public:
