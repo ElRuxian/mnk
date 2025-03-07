@@ -36,6 +36,9 @@ public:
                 allocator_.deallocate(memory_, capacity_);
         }
 
+        fast_object_pool(const fast_object_pool &) = delete;
+        fast_object_pool(fast_object_pool &&)      = default;
+
         inline std::size_t // maximum number of allocable objects
         capacity() const
         {
