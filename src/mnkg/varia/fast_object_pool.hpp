@@ -14,8 +14,7 @@ public:
                 assert(capacity_ > 1 && "what are you doing?");
 
                 allocator_ = std::allocator<T>();
-                memory_    = allocator_.allocate(capacity_);
-                assert(memory_ && "memory allocation failed");
+                memory_    = allocator_.allocate(capacity_); // may throw
 
                 for (std::size_t i = 0; i < capacity_; ++i)
                         free_.push_back(&memory_[i]);
