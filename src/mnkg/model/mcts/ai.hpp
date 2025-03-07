@@ -1,6 +1,6 @@
 #pragma once
 
-#include "model/mcts/tree.hpp"
+#include "varia/fast_object_pool.hpp"
 #include <algorithm>
 #include <asio/thread_pool.hpp>
 #include <cassert>
@@ -9,29 +9,24 @@
 #include <model/game.hpp>
 #include <model/player.hpp>
 #include <mutex>
-#include <numeric>
-#include <print>
 #include <random>
 #include <thread>
 
 namespace mnkg::model::mcts {
 
-// clang-format off
 template <class Game, typename Action = typename Game::action>
-requires
-    std::is_base_of_v<model::game::combinatorial<Action>, Game>
-class ai { // clang-format on
+requires std::is_base_of_v<model::game::combinatorial<Action>, Game> class ai {
 public:
-        using tree = tree<Game>;
-
         struct hyperparameters {
                 size_t leaf_parallelization = 1; // simulations per iteration
                 float  exploration          = std::sqrt(2); // UCT constant
-                std::optional<size_t> max_depth = std::nullopt;
+                std::optional<size_t> max_depth    = std::nullopt;
+                std::size_t           memory_usage = 1024;
         };
 
         ai(Game game, hyperparameters hparams = {}) :
-                tree_{ game }, hyperparameters_{ hparams },
+                tree_{ .root = make_node(game) }, hyperparameters_{ hparams },
+                node_pool_{ hparams.memory_usage / sizeof(node) },
                 worker_pool_{ hparams.leaf_parallelization },
                 search_thread_{ [this] {
                         while (!stopping_.load(std::memory_order_relaxed))
@@ -48,7 +43,7 @@ public:
                 search_thread_.join();
         }
 
-        Game::action
+        typename Game::action
         evaluate()
         {
                 auto        lock       = std::lock_guard(tree_.mutex);
@@ -99,15 +94,56 @@ public:
         }
 
 private:
+        struct node;
+
+        using node_pool = mnkg::fast_object_pool<node>;
+        using node_ptr  = std::unique_ptr<node, typename node_pool::deleter>;
+
+        struct node {
+
+                Game::action                       action;
+                Game                               game;
+                size_t                             visits;
+                float                              payoff;
+                node                              *parent;
+                std::vector<node_ptr>              children;
+                std::vector<typename Game::action> untried;
+
+                node(Game game) : game(game), untried(game.playable_actions())
+                {
+                }
+
+                node(node &parent, const Game::action &action) :
+                        parent(&parent), action(action), game(parent.game)
+                {
+                        game.play(action);
+                        untried = game.playable_actions();
+                }
+        };
+
+        node_ptr &&
+        make_node(auto &&...args)
+        {
+                return { node_pool_.allocate(
+                             std::forward<decltype(args)>(args)...),
+                         { &node_pool_ } };
+        }
+
+        struct tree {
+                node_ptr   root;
+                std::mutex mutex;
+        };
+
         tree                tree_;
         hyperparameters     hyperparameters_;
+        node_pool           node_pool_;
         std::atomic<size_t> iteration_count_ = { 0 };
         asio::thread_pool   worker_pool_;
         std::thread         search_thread_;
         std::atomic<bool>   stopping_ = { false };
 
         float
-        rate_(const tree::node &node)
+        rate_(const node &node)
         {
                 // UCT (Upper Confidence Bound 1 applied to trees)
                 assert(node.parent);
@@ -120,7 +156,7 @@ private:
                         return std::numeric_limits<float>::infinity();
         }
 
-        tree::node &
+        node &
         select_(const tree &tree)
         {
                 auto        *it        = tree.root.get();
@@ -137,18 +173,23 @@ private:
         }
 
         bool
-        should_select_(const tree::node &node)
+        is_expandable_(const node &node)
+        {
+                return !node.untried.empty()
+                       && (node_pool_.size() < node_pool_.capacity());
+        }
+
+        bool
+        should_select_(const node &node)
         {
                 bool terminal = node.game.is_over();
                 bool parent   = !node.children.empty();
-                assert(not(terminal && parent));
-                bool expandable = !node.untried.empty();
-
-                return terminal || expandable;
+                assert(!(terminal && parent));
+                return terminal || is_expandable_(node);
         }
 
-        inline tree::node &
-        next_(const tree::node &node)
+        inline node &
+        next_(const node &node)
         {
                 return *std::max_element(node.children.begin(),
                                          node.children.end(),
@@ -158,12 +199,14 @@ private:
                             ->get();
         }
 
-        tree::node &
-        expand_(tree::node &parent)
+        node &
+        expand_(node &parent)
         {
+                assert(is_expandable_(parent));
+
                 static thread_local std::mt19937 rng{ std::random_device{}() };
 
-                // pick random untried action
+                // Pick random untried action:
                 assert(!parent.untried.empty());
                 std::uniform_int_distribution<size_t> distribution(
                     0, parent.untried.size() - 1);
@@ -172,17 +215,15 @@ private:
                 auto action = parent.untried.back();
                 parent.untried.pop_back();
 
-                // create and return corresponding child
-                parent.children.emplace_back(
-                    std::make_unique<typename tree::node>(parent, action));
+                // Allocate and return corresponding child node:
+                parent.children.emplace_back(make_node(parent, action));
                 return *parent.children.back();
         }
 
-        inline Game // reached game-state; terminal
+        inline Game
         random_playout_(Game &&game)
         {
-                auto static thread_local rng
-                    = std::mt19937(std::random_device{}());
+                static thread_local std::mt19937 rng(std::random_device{}());
                 while (!game.is_over()) {
                         auto actions = game.playable_actions();
                         assert(!actions.empty());
@@ -195,7 +236,7 @@ private:
         }
 
         float // delta-payoff from perspective of player who reaches node
-        simulate_(const tree::node &node)
+        simulate_(const node &node)
         {
                 auto delta_payoff_ = [this, &node]() {
                         auto player = node.game.current_opponent();
@@ -237,7 +278,7 @@ private:
         }
 
         void
-        backpropagate_(tree::node &node, float payoff)
+        backpropagate_(node &node, float payoff)
         {
                 // payoff is seen from perspective of player who reaches node
 
