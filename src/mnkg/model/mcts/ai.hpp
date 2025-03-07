@@ -173,24 +173,19 @@ private:
         }
 
         bool
-        is_expandable_(const node &node)
-        {
-                return !node.untried.empty()
-                       && (node_pool_.size() < node_pool_.capacity());
-        }
-
-        bool
         should_select_(const node &node)
         {
-                bool terminal = node.game.is_over();
-                bool parent   = !node.children.empty();
+                bool terminal   = node.game.is_over();
+                bool parent     = !node.children.empty();
+                bool expandable = !node.untried.empty();
                 assert(!(terminal && parent));
-                return terminal || is_expandable_(node);
+                return terminal || expandable;
         }
 
         inline node &
         next_(const node &node)
         {
+                assert(!node.children.empty());
                 return *std::max_element(node.children.begin(),
                                          node.children.end(),
                                          [this](const auto &a, const auto &b) {
@@ -202,7 +197,7 @@ private:
         node &
         expand_(node &parent)
         {
-                assert(is_expandable_(parent));
+                assert(not node_pool_.full());
 
                 static thread_local std::mt19937 rng{ std::random_device{}() };
 
@@ -295,7 +290,7 @@ private:
         {
                 std::lock_guard lock(tree.mutex);
                 auto            node = &select_(tree);
-                if (!node->untried.empty())
+                if (!node->untried.empty() && !node_pool_.full())
                         node = &expand_(*node);
                 backpropagate_(*node, simulate_(*node));
                 iteration_count_.fetch_add(1, std::memory_order_relaxed);
