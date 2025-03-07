@@ -98,7 +98,8 @@ public:
                 void
                 operator()(T *ptr) const
                 {
-                        assert(ptr && "deleting nullptr");
+                        if (!ptr)
+                                return;
                         assert(pool && "no pool set");
                         pool->deallocate(ptr);
                 }
