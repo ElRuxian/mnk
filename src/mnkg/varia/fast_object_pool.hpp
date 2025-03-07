@@ -63,6 +63,7 @@ public:
                 if (free_.empty())
                         return nullptr;
                 T *obj = free_.back();
+                free_.pop_back();
                 allocator_.construct(obj, std::forward<Args>(args)...);
                 return obj;
         }
@@ -86,7 +87,8 @@ private:
         is_chunk_(const T *obj) const
         {
                 auto offset = obj - &memory_[0];
-                bool inside = offset >= 0 && offset < capacity_;
+                bool inside = offset >= 0
+                              && static_cast<std::size_t>(offset) < capacity_;
                 bool aligned
                     = reinterpret_cast<std::uintptr_t>(obj) % alignof(T) == 0;
                 return inside && aligned;
