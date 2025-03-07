@@ -48,6 +48,18 @@ public:
                 return capacity_ - free_.size();
         }
 
+        inline bool
+        empty() const
+        {
+                return free_.size() == capacity_;
+        }
+
+        inline bool
+        full() const
+        {
+                return free_.empty();
+        }
+
         template <typename... Args>
         T *
         allocate(Args &&...args)
