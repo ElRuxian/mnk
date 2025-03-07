@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <cstddef>
+#include <cstdlib>
 #include <new>
 #include <utility>
 #include <vector>
@@ -18,7 +19,9 @@ public:
         explicit fast_object_pool(std::size_t capacity) : capacity_(capacity)
         {
                 assert(capacity_ > 1 && "what are you doing?");
-                memory_ = ::operator new(capacity_ * sizeof(T));
+                const std::size_t alignment = alignof(T);
+                memory_ = std::aligned_alloc(alignment, capacity_ * sizeof(T));
+                assert(memory_ && "memory allocation failed");
                 for (std::size_t i = 0; i < capacity_; ++i)
                         free_.push_back(reinterpret_cast<T *>(
                             static_cast<char *>(memory_) + i * sizeof(T)));
@@ -87,6 +90,7 @@ public:
                         assert(pool && "no pool set");
                         pool->deallocate(ptr);
                 }
+                // WARNING: no deleter should outlive its assigned pool.
         };
 };
 
