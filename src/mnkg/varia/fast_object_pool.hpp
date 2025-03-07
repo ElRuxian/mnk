@@ -50,7 +50,7 @@ public:
         inline bool
         full() const
         {
-                return free_.empty();
+                return size() == capacity_;
         }
 
         template <typename... Args>
