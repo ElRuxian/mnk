@@ -93,11 +93,15 @@ private:
         inline bool
         is_chunk_(const T *obj) const
         {
-                auto offset = obj - &memory_[0];
-                bool inside = offset >= 0
-                              && static_cast<std::size_t>(offset) < capacity_;
+                if (!memory_ || !obj)
+                        return false;
+
+                auto index = obj - memory_; // pointer arithmetic
+                bool inside
+                    = index >= 0 && static_cast<std::size_t>(index) < capacity_;
                 bool aligned
-                    = reinterpret_cast<std::uintptr_t>(obj) % alignof(T) == 0;
+                    = (reinterpret_cast<std::uintptr_t>(obj) % alignof(T)) == 0;
+
                 return inside && aligned;
         }
 
