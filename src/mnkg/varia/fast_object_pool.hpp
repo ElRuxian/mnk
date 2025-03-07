@@ -6,8 +6,7 @@
 
 #include <cassert>
 #include <cstddef>
-#include <cstdlib>
-#include <new>
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -19,12 +18,12 @@ public:
         explicit fast_object_pool(std::size_t capacity) : capacity_(capacity)
         {
                 assert(capacity_ > 1 && "what are you doing?");
-                const std::size_t alignment = alignof(T);
-                memory_ = std::aligned_alloc(alignment, capacity_ * sizeof(T));
+
+                memory_ = std::make_unique<T[]>(capacity_);
+
                 assert(memory_ && "memory allocation failed");
                 for (std::size_t i = 0; i < capacity_; ++i)
-                        free_.push_back(reinterpret_cast<T *>(
-                            static_cast<char *>(memory_) + i * sizeof(T)));
+                        free_.push_back(&memory_[i]);
         }
 
         ~fast_object_pool()
@@ -33,10 +32,9 @@ public:
                 // objects. Otherwise, they are deleted without proper
                 // destruction.
                 assert(free_.size() == capacity_);
-                std::free(memory_);
         }
 
-        inline std::size_t // maximum number o allocable objects
+        inline std::size_t // maximum number of allocable objects
         capacity() const
         {
                 return capacity_;
@@ -79,18 +77,24 @@ public:
         deallocate(T *obj)
         // WARNING: * Not thread-safe.
         {
-                assert(obj >= reinterpret_cast<T *>(memory_)
-                       && obj < reinterpret_cast<T *>(memory_) + capacity_
-                       && "deallocated object not in pool");
-
+                assert(is_chunk_(obj) && "invalid pool-object");
                 obj->~T();
                 free_.push_back(obj);
         }
 
 private:
-        void             *memory_;
-        const std::size_t capacity_;
-        std::vector<T *>  free_;
+        std::unique_ptr<T[]> memory_; // Use unique_ptr for memory management
+        const std::size_t    capacity_;
+        std::vector<T *>     free_; // Track free objects as raw pointers
+
+        inline bool
+        is_chunk_(const T *obj) const
+        {
+                auto offset   = obj - &memory_[0];
+                bool inside   = offset >= 0 && offset < capacity_;
+                bool alligned = offset % sizeof(T) == 0;
+                return inside && alligned;
+        }
 
 public:
         struct deleter {
