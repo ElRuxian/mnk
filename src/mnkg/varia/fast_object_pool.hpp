@@ -22,6 +22,7 @@ public:
                 allocator_ = std::allocator<T>();
                 memory_    = allocator_.allocate(capacity_); // may throw
 
+                free_.reserve(capacity_);
                 for (std::size_t i = 0; i < capacity_; ++i)
                         free_.push_back(&memory_[i]);
         }
