@@ -1,3 +1,9 @@
+// This class implements a fixed-size pool of objects that can be allocated and
+// deallocated in constant time.
+// Speed was valued over safety and functionality, as the pool was made for its
+// use in a controlled, performance-critical context: the MCTS algorithm found
+// in this project.
+
 #include <cassert>
 #include <cstddef>
 #include <memory>
@@ -62,19 +68,19 @@ public:
                 assert(not full() && "pool is full");
                 if (free_.empty())
                         return nullptr;
-                T *obj = free_.back();
+                T *location = free_.back();
                 free_.pop_back();
-                allocator_.construct(obj, std::forward<Args>(args)...);
-                return obj;
+                std::construct_at(location, std::forward<Args>(args)...);
+                return location;
         }
 
         void
-        deallocate(T *obj)
+        deallocate(T *location)
         // WARNING: * Not thread-safe.
         {
-                assert(is_chunk_(obj) && "invalid pool-object");
-                allocator_.destroy(obj);
-                free_.push_back(obj);
+                assert(is_chunk_(location) && "invalid pool-object");
+                std::destroy_at(location);
+                free_.push_back(location);
         }
 
 private:
