@@ -70,7 +70,10 @@ public:
                 auto target = std::find_if(next.begin(), next.end(), is_target);
                 bool found  = target != next.end();
                 if (found) {
-                        root         = std::move(*target);
+                        // for some fucking reason, this corrupts the deleter
+                        // root = std::move(*target);
+                        auto mid     = std::move(*target);
+                        root         = std::move(mid);
                         root->parent = nullptr;
                 } else {
                         root->action = action;
