@@ -20,10 +20,23 @@ template <class Game, typename Action = typename Game::action>
 requires std::is_base_of_v<model::game::combinatorial<Action>, Game> class ai {
 public:
         struct hyperparameters {
-                size_t leaf_parallelization = 1; // simulations per iteration
-                float  exploration = std::numbers::sqrt2; // UCT constant
+
+                // How many parallel simulations are run per iteration;
+                // size of the simulation worker (thread) pool.
+                size_t leaf_parallelization = 1;
+
+                // UCT constant
+                float exploration = std::numbers::sqrt2;
+
+                // Maximum depth of the search tree.
+                // Limits expansion, not simulation.
                 std::optional<size_t> max_depth = std::nullopt;
-                std::size_t memory_usage        = std::pow(1024, 3) * 2; // 2GiB
+
+                // Size of the memory pre-allocated for constructing nodes.
+                // No further memory is allocated during the search.
+                // Note: may indirectly cap tree-depth below max_depth.
+                // Note: memory may be wasted if the tree is shallow.
+                std::size_t memory_usage = std::pow(1024, 3) * 2; // 2GiB
         };
 
         ai(Game game, hyperparameters hparams = {}) :
