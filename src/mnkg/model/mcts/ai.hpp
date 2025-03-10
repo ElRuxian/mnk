@@ -11,6 +11,7 @@
 #include <model/player.hpp>
 #include <mutex>
 #include <random>
+#include <stop_token>
 #include <thread>
 
 namespace mnkg::model::mcts {
@@ -29,20 +30,17 @@ public:
                 tree_{ .root = make_node(game) }, hyperparameters_{ hparams },
                 node_memory_{ hparams.memory_usage / sizeof(node) },
                 worker_pool_{ hparams.leaf_parallelization },
-                search_thread_{ [this] {
-                        while (!stopping_.load(std::memory_order_relaxed))
+                search_thread_{ [this](std::stop_token stop_token) {
+                        while (!stop_token.stop_requested()) {
                                 iterate_(tree_);
+                        }
                 } }
         {
                 assert(hparams.leaf_parallelization > 0);
                 assert(!hparams.max_depth || *hparams.max_depth > 0);
         }
 
-        ~ai()
-        {
-                stopping_.store(true);
-                search_thread_.join();
-        }
+        ~ai() = default;
 
         typename Game::action
         evaluate()
@@ -141,9 +139,8 @@ private:
         mnkg::slab_memory<sizeof(node)> node_memory_;
         tree                            tree_;
         std::atomic<size_t>             iteration_count_ = { 0 };
-        std::atomic<bool>               stopping_        = { false };
         asio::thread_pool               worker_pool_;
-        std::thread                     search_thread_;
+        std::jthread                    search_thread_;
 
         float
         rate_(const node &node)
