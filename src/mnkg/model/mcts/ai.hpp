@@ -1,6 +1,7 @@
 #pragma once
 
-#include "varia/fast_object_pool.hpp"
+#include "varia/allocate_unique.hpp"
+#include "varia/object_pool_allocator.hpp"
 #include <algorithm>
 #include <asio/thread_pool.hpp>
 #include <cassert>
@@ -26,7 +27,7 @@ public:
 
         ai(Game game, hyperparameters hparams = {}) :
                 tree_{ .root = make_node(game) }, hyperparameters_{ hparams },
-                node_pool_{ hparams.memory_usage / sizeof(node) },
+                node_memory_{ hparams.memory_usage / sizeof(node) },
                 worker_pool_{ hparams.leaf_parallelization },
                 search_thread_{ [this] {
                         while (!stopping_.load(std::memory_order_relaxed))
@@ -94,19 +95,17 @@ public:
         }
 
 private:
-        struct node;
-
-        using node_pool = mnkg::fast_object_pool<node>;
-        using node_ptr  = std::unique_ptr<node, typename node_pool::deleter>;
-
         struct node {
+
+                using unique_ptr = std::unique_ptr<
+                    node, alloc_deleter<mnkg::object_pool_allocator<node> > >;
 
                 Game::action                       action;
                 Game                               game;
                 size_t                             visits;
                 float                              payoff;
                 node                              *parent;
-                std::vector<node_ptr>              children;
+                std::vector<node::unique_ptr>      children;
                 std::vector<typename Game::action> untried;
 
                 node(Game game) : game(game), untried(game.playable_actions())
@@ -121,26 +120,27 @@ private:
                 }
         };
 
-        node_ptr
+        node::unique_ptr
         make_node(auto &&...args)
         {
-                return { node_pool_.allocate(
-                             std::forward<decltype(args)>(args)...),
-                         { &node_pool_ } };
+                auto allocator
+                    = mnkg::object_pool_allocator<node>(node_memory_);
+                return allocate_unique<node>(
+                    allocator, std::forward<decltype(args)>(args)...);
         }
 
         struct tree {
-                node_ptr   root;
-                std::mutex mutex;
+                node::unique_ptr root;
+                std::mutex       mutex;
         };
 
-        hyperparameters     hyperparameters_;
-        node_pool           node_pool_;
-        tree                tree_;
-        std::atomic<size_t> iteration_count_ = { 0 };
-        std::atomic<bool>   stopping_        = { false };
-        asio::thread_pool   worker_pool_;
-        std::thread         search_thread_;
+        hyperparameters                 hyperparameters_;
+        mnkg::slab_memory<sizeof(node)> node_memory_;
+        tree                            tree_;
+        std::atomic<size_t>             iteration_count_ = { 0 };
+        std::atomic<bool>               stopping_        = { false };
+        asio::thread_pool               worker_pool_;
+        std::thread                     search_thread_;
 
         float
         rate_(const node &node)
@@ -197,7 +197,7 @@ private:
         node &
         expand_(node &parent)
         {
-                assert(not node_pool_.full());
+                assert(not node_memory_.full());
 
                 static thread_local std::mt19937 rng{ std::random_device{}() };
 
@@ -290,7 +290,7 @@ private:
         {
                 std::lock_guard lock(tree.mutex);
                 auto            node = &select_(tree);
-                if (!node->untried.empty() && !node_pool_.full())
+                if (!node->untried.empty() && !node_memory_.full())
                         node = &expand_(*node);
                 backpropagate_(*node, simulate_(*node));
                 iteration_count_.fetch_add(1, std::memory_order_relaxed);
