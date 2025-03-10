@@ -124,7 +124,7 @@ private:
         make_node(auto &&...args)
         {
                 auto allocator
-                    = mnkg::object_pool_allocator<node>(node_memory_);
+                    = mnkg::object_pool_allocator<node>(&node_memory_);
                 return allocate_unique<node>(
                     allocator, std::forward<decltype(args)>(args)...);
         }

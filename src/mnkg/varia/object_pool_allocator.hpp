@@ -46,7 +46,7 @@ public:
         operator!=(const object_pool_allocator &) const
             = default;
 
-        object_pool_allocator(auto &memory) : memory_(&memory) {}
+        object_pool_allocator(auto *memory) : memory_(memory) {}
         object_pool_allocator(const object_pool_allocator &) noexcept = default;
         object_pool_allocator(object_pool_allocator &&) noexcept      = default;
         ~object_pool_allocator() noexcept                             = default;
