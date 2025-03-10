@@ -20,9 +20,9 @@ requires std::is_base_of_v<model::game::combinatorial<Action>, Game> class ai {
 public:
         struct hyperparameters {
                 size_t leaf_parallelization = 1; // simulations per iteration
-                float  exploration          = std::sqrt(2); // UCT constant
-                std::optional<size_t> max_depth    = std::nullopt;
-                std::size_t           memory_usage = 1024;
+                float  exploration = std::numbers::sqrt2; // UCT constant
+                std::optional<size_t> max_depth = std::nullopt;
+                std::size_t memory_usage        = std::pow(1024, 3) * 2; // 2GiB
         };
 
         ai(Game game, hyperparameters hparams = {}) :
