@@ -29,14 +29,6 @@ FetchContent_MakeAvailable(asio)
 set(ASIO_INCLUDE_DIR "${CMAKE_BINARY_DIR}/_deps/asio-src/asio/include")
 include_directories(${ASIO_INCLUDE_DIR})
 
-FetchContent_Declare(
-    crow
-    GIT_REPOSITORY https://github.com/CrowCpp/Crow.git
-    GIT_TAG v1.2.1.2
-)
-FetchContent_MakeAvailable(crow)
-include_directories(${crow_SOURCE_DIR}/include)
-
 include_directories(src/mnkg)
 
 file(GLOB_RECURSE SOURCES src/*.cpp)
