@@ -161,6 +161,19 @@ public:
                         };
                 };
 
+                const auto on_left = [&](const sf::Event::MouseLeft &event) {
+                        clear_phantom_stones_();
+                        redraw_window_();
+                };
+
+                const auto on_entered
+                    = [&](const sf::Event::MouseEntered &event) {
+                              if (game_->is_playable(selected_))
+                                      draw_phantom_stone_(
+                                          game_->current_player(), selected_);
+                              redraw_window_();
+                      };
+
                 const auto on_click
                     = [&](const sf::Event::MouseButtonPressed &event) {
                               if (event.button == sf::Mouse::Button::Left
@@ -174,7 +187,8 @@ public:
                       };
 
                 while (window_.isOpen())
-                        window_.handleEvents(on_close, on_move, on_click);
+                        window_.handleEvents(
+                            on_close, on_move, on_left, on_entered, on_click);
         }
 
 private:
