@@ -58,6 +58,22 @@ texture(const Renderable &)
         assert(not "Texture implementation");
 }
 
+template <typename Renderable>
+sf::Texture
+texture(const Renderable &renderable, style style)
+{
+        // HACK: Shit ass switch. Must be refactored later.
+        //       "Make it work first".
+        switch (style) {
+        case style::tic_tac_toe:
+                return texture<style::tic_tac_toe>(renderable);
+        case style::connect_four:
+                return texture<style::connect_four>(renderable);
+        case style::go:
+                return texture<style::go>(renderable);
+        }
+}
+
 template <>
 sf::Texture
 texture<style::tic_tac_toe, board>(const board &board)
