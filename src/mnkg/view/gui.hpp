@@ -219,8 +219,11 @@ private:
         draw_phantom_stone_(unsigned int  texture_index,
                             point<int, 2> cell_coords)
         {
-                sf::Sprite sprite(textures_.stone[texture_index]);
-                sprite.setColor({ 0xFF, 0xFF, 0xFF, 0x7F }); // translucent
+                sf::Sprite     sprite(textures_.stone[texture_index]);
+                constexpr auto opacity_factor = 0.3f;
+                sf::Color      color;
+                color.a *= opacity_factor; // alpha channel
+                sprite.setColor(color);
                 auto position = point<float, 2>(cell_coords) * cell_size_;
                 sprite.setPosition({ position[0], position[1] });
                 renders_.overlay.draw(sprite);
