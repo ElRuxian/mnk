@@ -117,7 +117,9 @@ public:
                 } else if constexpr (std::same_as<operand_type, Component>) {  \
                         transform(components_,                                 \
                                   components_.begin(),                         \
-                                  bind_front(transformation<>(), operand));    \
+                                  std::bind(transformation{},                  \
+                                            std::placeholders::_1,             \
+                                            operand));                         \
                         return *this;                                          \
                 }                                                              \
         }
