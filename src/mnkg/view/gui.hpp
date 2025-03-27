@@ -11,6 +11,7 @@
 #include <SFML/Graphics/View.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Mouse.hpp>
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <memory>
@@ -33,10 +34,93 @@ make_point(const sf::Vector2<T> &vec)
 
 namespace view {
 
+struct board {
+        constexpr static sf::Vector2u cell_size = { 64, 64 }; // unit: pixels
+        const sf::Vector2u            size;                   // unit: cells
+};
+
+struct stone {
+        constexpr static float size_factor = 0.8; // relative to cell
+        uint                   variant;           // simple index
+        // Equal stones look the same
+};
+
 enum class style {
         tic_tac_toe,
         connect_four,
         go,
+};
+
+template <style Style, typename Renderable>
+sf::Texture
+texture(const Renderable &)
+{
+        assert(not "Texture implementation");
+}
+
+template <>
+sf::Texture
+texture<style::tic_tac_toe, board>(const board &board)
+{
+
+        auto size = board.size.componentWiseMul(board.cell_size);
+
+        auto texture = sf::RenderTexture(size);
+
+        texture.clear(sf::Color::White);
+
+        sf::RectangleShape line;
+        constexpr auto     line_thickness = 2; // arbitrary; looks ok
+
+        for (uint i = 1; i < board.size.x; ++i) {
+                auto size = sf::Vector2f(line_thickness, texture.getSize().y);
+                line.setSize(size);
+                auto position = sf::Vector2<float>(i * board.cell_size.x, 0);
+                line.setPosition(position);
+                line.setFillColor(sf::Color::Black);
+                texture.draw(line);
+        }
+
+        for (uint i = 1; i < board.size.y; ++i) {
+                auto size = sf::Vector2f(texture.getSize().x, line_thickness);
+                line.setSize(size);
+                auto position = sf::Vector2<float>(0, i * board.cell_size.y);
+                line.setPosition(position);
+                line.setFillColor(sf::Color::Black);
+                texture.draw(line);
+        }
+
+        texture.display();
+        return texture.getTexture();
+};
+
+template <>
+sf::Texture
+texture<style::connect_four, stone>(const stone &stone)
+{
+        auto           texture = sf::RenderTexture(board::cell_size);
+        constexpr auto max_radius
+            = std::max(board::cell_size.x, board::cell_size.y);
+        constexpr auto  radius = max_radius * stone::size_factor / 2;
+        sf::CircleShape shape(radius);
+        shape.setOrigin({ radius, radius }); // center
+        auto center = static_cast<float>(max_radius) / 2;
+        shape.setPosition({ center, center });
+        switch (stone.variant) {
+        case 0:
+                shape.setFillColor(sf::Color::Red);
+                break;
+        case 1:
+                shape.setFillColor(sf::Color::Blue);
+                break;
+        default:
+                assert("Unrecognized stone variant");
+                std::unreachable(); // test the code!
+        }
+        texture.clear(sf::Color::Transparent);
+        texture.draw(shape);
+        texture.display();
+        return texture.getTexture();
 };
 
 class gui {
@@ -81,63 +165,12 @@ public:
                         window_.setView(view);
                 }
 
-                // Create board texture
-                {
+                textures_.board = texture<style::tic_tac_toe>(
+                    board{ { grid_size[0], grid_size[1] } });
 
-                        auto texture = sf::RenderTexture(view_size);
-
-                        texture.clear(sf::Color::White);
-
-                        sf::RectangleShape line;
-                        constexpr auto     thickness = 2; // arbitrary
-
-                        for (uint i = 1; i < grid_size[0]; ++i) {
-                                line.setSize(sf::Vector2f(thickness,
-                                                          texture.getSize().y));
-                                line.setPosition(
-                                    { static_cast<float>(i * cell_size_), 0 });
-                                line.setFillColor(sf::Color::Black);
-                                texture.draw(line);
-                        }
-
-                        for (uint i = 1; i < grid_size[1]; ++i) {
-                                line.setSize(sf::Vector2f(texture.getSize().y,
-                                                          thickness));
-                                line.setPosition(
-                                    { 0, static_cast<float>(i * cell_size_) });
-                                line.setFillColor(sf::Color::Black);
-                                texture.draw(line);
-                        }
-
-                        texture.display();
-
-                        textures_.board = texture.getTexture();
-                }
-
-                // Create stone textures
-                {
-                        auto texture
-                            = sf::RenderTexture({ cell_size_, cell_size_ });
-
-                        constexpr auto size_factor = 0.8; // relative to cell
-                        constexpr auto radius = cell_size_ * size_factor / 2;
-
-                        sf::CircleShape stone(radius);
-                        stone.setOrigin({ radius, radius }); // center
-                        auto center = static_cast<float>(cell_size_) / 2;
-                        stone.setPosition({ center, center });
-
-                        stone.setFillColor(sf::Color::Red);
-                        texture.clear(sf::Color::Transparent);
-                        texture.draw(stone);
-                        texture.display();
-                        textures_.stone[0] = texture.getTexture();
-
-                        stone.setFillColor(sf::Color::Blue);
-                        texture.clear(sf::Color::Transparent);
-                        texture.draw(stone);
-                        texture.display();
-                        textures_.stone[1] = texture.getTexture();
+                for (uint i = 0; i < model::mnk::game::player_count(); ++i) {
+                        textures_.stone[i]
+                            = texture<style::connect_four>(stone(i));
                 }
 
                 render_background_();
