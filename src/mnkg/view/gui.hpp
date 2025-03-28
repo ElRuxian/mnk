@@ -5,8 +5,15 @@
 
 namespace mnkg::view {
 
+enum class style {
+        tictactoe,
+        connect_four,
+        go,
+};
+
 struct settings {
         std::string title = "MNK Game";
+        style       style = style::tictactoe;
 };
 
 class gui {

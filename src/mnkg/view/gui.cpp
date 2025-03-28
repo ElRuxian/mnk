@@ -42,12 +42,6 @@ struct stone {
         // Equal stones look the same
 };
 
-enum class style {
-        tictactoe,
-        connect_four,
-        go,
-};
-
 template <style Style, typename Renderable>
 sf::Texture
 texture(const Renderable &)
@@ -345,12 +339,11 @@ public:
                         window_.setView(view);
                 }
 
-                textures_.board = texture<style::tictactoe>(
-                    board{ { grid_size[0], grid_size[1] } });
+                textures_.board = texture(
+                    board{ { grid_size[0], grid_size[1] } }, settings.style);
 
                 for (uint i = 0; i < model::mnk::game::player_count(); ++i) {
-                        textures_.stone[i]
-                            = texture<style::tictactoe>(stone(i));
+                        textures_.stone[i] = texture(stone(i), settings.style);
                 }
 
                 render_background_();
