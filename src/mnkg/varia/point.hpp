@@ -62,7 +62,8 @@ public:
 
         ~point() noexcept = default;
 
-        inline decltype(auto) operator[](this auto &&self, size_t index)
+        inline decltype(auto) constexpr operator[](this auto &&self,
+                                                   size_t      index)
         {
                 assert(index < self.dimension);
                 return self.components_[index];
