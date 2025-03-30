@@ -17,29 +17,34 @@
 #include <array>
 #include <cassert>
 #include <memory>
+#include <optional>
+#include <utility>
 
-namespace mnkg {
+#include "varia/point.hpp"
 
-// sf::Vector2<T> to point<T, 2> conversion
-// TODO: find a better way, in a better place?
-template <typename T>
-point<T, 2>
-make_point(const sf::Vector2<T> &vec)
-{
-        return point(vec.x, vec.y);
-}
-
-namespace view {
+namespace mnkg::view {
 
 struct board {
-        constexpr static sf::Vector2u cell_size = { 32, 32 }; // unit: pixels
-        const sf::Vector2u            size;                   // unit: cells
+        constexpr static point<uint, 2> cell_size = { 32u, 32u }; // pixels
+        const point<uint, 2>            size;                     // cells
+
+        std::optional<point<uint, 2> >
+        map(sf::Vector2i position) const
+        {
+                auto x = position.x / cell_size[0];
+                auto y = position.y / cell_size[1];
+                if (position.x < 0 || position.y < 0)
+                        return std::nullopt;
+                if (x >= size[0] || y >= size[1])
+                        return std::nullopt;
+                return point(static_cast<uint>(x), static_cast<uint>(y));
+        }
 };
 
 struct stone {
         constexpr static float size_factor = 0.8; // relative to cell
         uint                   variant;           // simple index
-        // Equal stones look the same
+        // Equal stones (same variant) look the same.
 };
 
 template <style Style, typename Renderable>
@@ -70,7 +75,7 @@ sf::Texture
 texture<style::tictactoe, board>(const board &board)
 {
 
-        auto size = board.size.componentWiseMul(board.cell_size);
+        auto size = transform(std::multiplies{}, board.size, board.cell_size);
 
         auto texture = sf::RenderTexture(size);
 
@@ -79,19 +84,19 @@ texture<style::tictactoe, board>(const board &board)
         sf::RectangleShape line;
         constexpr auto     line_thickness = 2; // arbitrary; looks ok
 
-        for (uint i = 1; i < board.size.x; ++i) {
+        for (uint i = 1; i < board.size[0]; ++i) {
                 auto size = sf::Vector2f(line_thickness, texture.getSize().y);
                 line.setSize(size);
-                auto position = sf::Vector2<float>(i * board.cell_size.x, 0);
+                auto position = sf::Vector2<float>(i * board.cell_size[1], 0);
                 line.setPosition(position);
                 line.setFillColor(sf::Color::Black);
                 texture.draw(line);
         }
 
-        for (uint i = 1; i < board.size.y; ++i) {
+        for (uint i = 1; i < board.size[1]; ++i) {
                 auto size = sf::Vector2f(texture.getSize().x, line_thickness);
                 line.setSize(size);
-                auto position = sf::Vector2<float>(0, i * board.cell_size.y);
+                auto position = sf::Vector2<float>(0, i * board.cell_size[1]);
                 line.setPosition(position);
                 line.setFillColor(sf::Color::Black);
                 texture.draw(line);
@@ -106,7 +111,7 @@ sf::Texture
 texture<style::connect_four, board>(const board &board)
 {
 
-        auto size = board.size.componentWiseMul(board.cell_size);
+        auto size = transform(std::multiplies{}, board.size, board.cell_size);
 
         auto texture = sf::RenderTexture(size);
 
@@ -115,19 +120,19 @@ texture<style::connect_four, board>(const board &board)
         // TODO: refactor
         //       (this block of code it repeated in texture<tic_tac_toe, stone>)
         constexpr auto max_dimension
-            = std::max(board::cell_size.x, board::cell_size.y);
+            = std::max(board::cell_size[0], board::cell_size[1]);
         constexpr auto  radius = max_dimension * stone::size_factor / 2;
         sf::CircleShape shape(radius);
 
         shape.setFillColor(sf::Color::White);
 
-        for (uint x = 0; x < board.size.x; ++x)
-                for (uint y = 0; y < board.size.y; ++y) {
-                        auto position = sf::Vector2f(x * board.cell_size.x,
-                                                     y * board.cell_size.y);
+        for (uint x = 0; x < board.size[0]; ++x)
+                for (uint y = 0; y < board.size[1]; ++y) {
+                        auto position = sf::Vector2f(x * board.cell_size[0],
+                                                     y * board.cell_size[1]);
                         position
-                            += sf::Vector2f(board.cell_size.x / 2.f - radius,
-                                            board.cell_size.y / 2.f - radius);
+                            += sf::Vector2f(board.cell_size[0] / 2.f - radius,
+                                            board.cell_size[1] / 2.f - radius);
                         shape.setPosition(position);
                         texture.draw(shape);
                 }
@@ -141,7 +146,7 @@ sf::Texture
 texture<style::go, board>(const board &board)
 {
 
-        auto size = board.size.componentWiseMul(board.cell_size);
+        auto size = transform(std::multiplies{}, board.size, board.cell_size);
 
         auto texture = sf::RenderTexture(size);
 
@@ -149,30 +154,30 @@ texture<style::go, board>(const board &board)
         texture.clear(wood_color);
 
         constexpr auto max_dimension
-            = std::max(board::cell_size.x, board::cell_size.y);
+            = std::max(board::cell_size[0], board::cell_size[1]);
 
         sf::RectangleShape line;
         constexpr float    line_thickness = max_dimension * 0.1f;
 
-        for (uint x = 0; x < board.size.x; ++x) {
+        for (uint x = 0; x < board.size[0]; ++x) {
                 auto size = sf::Vector2f(
-                    line_thickness, texture.getSize().y - board.cell_size.y);
+                    line_thickness, texture.getSize().y - board.cell_size[1]);
                 line.setSize(size);
-                auto position = sf::Vector2<float>(x * board.cell_size.x, 0);
+                auto position = sf::Vector2<float>(x * board.cell_size[0], 0);
                 position
-                    += { board.cell_size.x / 2.f, board.cell_size.y / 2.f };
+                    += { board.cell_size[0] / 2.f, board.cell_size[1] / 2.f };
                 line.setPosition(position);
                 line.setFillColor(sf::Color::Black);
                 texture.draw(line);
         }
 
-        for (uint y = 0; y < board.size.y; ++y) {
+        for (uint y = 0; y < board.size[1]; ++y) {
                 auto size = sf::Vector2f(
-                    texture.getSize().x - board.cell_size.x, line_thickness);
+                    texture.getSize().x - board.cell_size[0], line_thickness);
                 line.setSize(size);
-                auto position = sf::Vector2<float>(0, y * board.cell_size.y);
+                auto position = sf::Vector2<float>(0, y * board.cell_size[1]);
                 position
-                    += { board.cell_size.x / 2.f, board.cell_size.y / 2.f };
+                    += { board.cell_size[0] / 2.f, board.cell_size[1] / 2.f };
                 line.setPosition(position);
                 line.setFillColor(sf::Color::Black);
                 texture.draw(line);
@@ -188,7 +193,7 @@ texture<style::connect_four, stone>(const stone &stone)
 {
         auto           texture = sf::RenderTexture(board::cell_size);
         constexpr auto max_dimension
-            = std::max(board::cell_size.x, board::cell_size.y);
+            = std::max(board::cell_size[0], board::cell_size[1]);
         constexpr auto  radius = max_dimension * stone::size_factor / 2;
         sf::CircleShape shape(radius);
         shape.setOrigin({ radius, radius }); // center
@@ -217,7 +222,7 @@ texture<style::go, stone>(const stone &stone)
 {
         auto           texture = sf::RenderTexture(board::cell_size);
         constexpr auto max_radius
-            = std::max(board::cell_size.x, board::cell_size.y);
+            = std::max(board::cell_size[0], board::cell_size[1]);
         constexpr auto  radius = max_radius * stone::size_factor / 2;
         sf::CircleShape shape(radius);
         shape.setOrigin({ radius, radius }); // center
@@ -247,7 +252,7 @@ texture<style::tictactoe, stone>(const stone &stone)
         sf::RenderTexture texture(board::cell_size);
 
         constexpr float max_dimension
-            = std::max(board::cell_size.x, board::cell_size.y);
+            = std::max(board::cell_size[0], board::cell_size[1]);
         constexpr float line_thickness = max_dimension * 0.1f;
 
         texture.clear(sf::Color::Transparent);
@@ -255,8 +260,7 @@ texture<style::tictactoe, stone>(const stone &stone)
         if (stone.variant == 0) { // draw cross (X) sf::RectangleShape line1;
                 sf::RectangleShape line1, line2;
 
-                sf::Vector2f center
-                    = { board::cell_size.x / 2.0f, board::cell_size.y / 2.0f };
+                auto  center      = point<float, 2>(board::cell_size) / 2;
                 float line_length = max_dimension * 0.8f;
 
                 auto color = sf::Color::Red;
@@ -306,12 +310,11 @@ private:
         std::shared_ptr<mnkg::model::mnk::game> &game_;
         const struct settings                    settings_;
         sf::RenderWindow                         window_;
-        mnkg::model::mnk::board::position        selected_;
+        point<int, 2>                            selected_cell_;
         struct textures {
                 sf::Texture                board;
                 std::array<sf::Texture, 2> stone; // two variations
         } textures_;
-        constexpr static uint cell_size_ = 32; // side length in pixels
         struct {
                 sf::RenderTexture game, overlay;
         } renders_;
@@ -323,7 +326,7 @@ public:
                 const auto grid_size
                     = point<uint, 2>(game_->board().get_size());
                 auto view_size
-                    = sf::Vector2u{ grid_size[1], grid_size[0] } * cell_size_;
+                    = transform(std::multiplies{}, grid_size, board::cell_size);
                 window_.create(sf::VideoMode(view_size),
                                settings.title,
                                sf::Style::Titlebar | sf::Style::Close);
@@ -356,13 +359,16 @@ public:
                     = [&](const sf::Event::Closed &) { window_.close(); };
 
                 const auto on_move = [&](const sf::Event::MouseMoved &event) {
-                        auto coord = make_point(event.position) / cell_size_;
-                        if (coord != selected_) {
-                                selected_ = coord;
+                        auto coord = transform(std::divides{},
+                                               point<int, 2>(event.position),
+                                               point<int, 2>(board::cell_size));
+                        if (coord != selected_cell_) {
+                                selected_cell_ = coord;
                                 clear_phantom_stones_();
-                                if (game_->is_playable(coord))
+                                if (game_->is_playable(selected_cell_))
                                         draw_phantom_stone_(
-                                            game_->current_player(), selected_);
+                                            game_->current_player(),
+                                            selected_cell_);
                                 redraw_window_();
                         };
                 };
@@ -372,22 +378,22 @@ public:
                         redraw_window_();
                 };
 
-                const auto on_entered
-                    = [&](const sf::Event::MouseEntered &event) {
-                              if (game_->is_playable(selected_))
-                                      draw_phantom_stone_(
-                                          game_->current_player(), selected_);
-                              redraw_window_();
-                      };
+                const auto on_entered =
+                    [&](const sf::Event::MouseEntered &event) {
+                            if (game_->is_playable(selected_cell_))
+                                    draw_phantom_stone_(game_->current_player(),
+                                                        selected_cell_);
+                            redraw_window_();
+                    };
 
                 const auto on_click
                     = [&](const sf::Event::MouseButtonPressed &event) {
                               if (event.button == sf::Mouse::Button::Left
-                                  && game_->is_playable(selected_)) {
+                                  && game_->is_playable(selected_cell_)) {
                                       clear_phantom_stones_();
                                       draw_stone_(game_->current_player(),
-                                                  selected_);
-                                      game_->play(selected_);
+                                                  selected_cell_);
+                                      game_->play(selected_cell_);
                                       redraw_window_();
                               }
                       };
@@ -402,15 +408,18 @@ private:
         is_valid_(const struct textures &textures) const
         {
                 bool valid_board = [&]() {
-                        const auto &size = make_point(textures.board.getSize());
-                        auto expected = game_->board().get_size() * cell_size_;
+                        const auto &size     = textures.board.getSize();
+                        auto        expected = transform(
+                            std::multiplies{},
+                            point<uint, 2>(game_->board().get_size()),
+                            board::cell_size);
                         return size == static_cast<point<uint, 2> >(expected);
                 }();
 
                 bool valid_stones = [&]() {
                         for (const auto &stone : textures.stone) {
-                                const auto  &size = stone.getSize();
-                                sf::Vector2u expected(cell_size_, cell_size_);
+                                const auto &size     = stone.getSize();
+                                const auto &expected = board::cell_size;
                                 if (size != expected)
                                         return false;
                         }
@@ -418,6 +427,17 @@ private:
                 }();
 
                 return valid_board && valid_stones;
+        }
+
+        void
+        select_cell_(auto coords)
+        {
+                selected_cell_ = coords;
+                clear_phantom_stones_();
+                if (game_->is_playable(coords))
+                        draw_phantom_stone_(game_->current_player(),
+                                            selected_cell_);
+                redraw_window_();
         }
 
         void
@@ -430,8 +450,10 @@ private:
         draw_stone_(unsigned int texture_index, point<int, 2> cell_coords)
         {
                 sf::Sprite sprite(textures_.stone[texture_index]);
-                auto       position = point<float, 2>(cell_coords) * cell_size_;
-                sprite.setPosition({ position[0], position[1] });
+                auto       position = transform(std::multiplies{},
+                                          point<float, 2>(cell_coords),
+                                          point<float, 2>(board::cell_size));
+                sprite.setPosition(position);
                 renders_.game.draw(sprite);
         }
 
@@ -444,7 +466,9 @@ private:
                 sf::Color      color;
                 color.a *= opacity_factor; // alpha channel
                 sprite.setColor(color);
-                auto position = point<float, 2>(cell_coords) * cell_size_;
+                auto position = transform(std::multiplies{},
+                                          point<float, 2>(cell_coords),
+                                          point<float, 2>(board::cell_size));
                 sprite.setPosition({ position[0], position[1] });
                 renders_.overlay.draw(sprite);
         }
@@ -477,5 +501,4 @@ gui::run()
         pimpl_->do_run();
 }
 
-} // namespace view
-} // namespace mnkg
+} // namespace mnkg::view
