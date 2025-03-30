@@ -130,6 +130,13 @@ public:
         BINARY_ASSIGNMENT_OPERATOR(/=, Component, std::divides)
 #undef BINARY_ASSIGNMENT_OPERATOR
 
+        template <typename T>
+        constexpr explicit
+        operator point<T, Dimension>() const
+        {
+                return point<T, Dimension>((components_));
+        }
+
 // SFML (Simple and Fast Multimedia Library) integration
 #ifdef SFML_GRAPHICS_API
         point(const sf::Vector2<Component> &vector) :
