@@ -128,7 +128,26 @@ public:
         BINARY_ASSIGNMENT_OPERATOR(*=, Component, std::multiplies)
         BINARY_ASSIGNMENT_OPERATOR(/=, Component, std::divides)
 #undef BINARY_ASSIGNMENT_OPERATOR
+
+// SFML (Simple and Fast Multimedia Library) integration
+#ifdef SFML_GRAPHICS_API
+        point(const sf::Vector2<Component> &vector) :
+                components_{ vector.x, vector.y }
+        {
+        }
+
+        operator sf::Vector2<Component>() const
+        {
+                return { components_[0], components_[1] };
+        }
 };
+
+template <typename Component>
+point(const sf::Vector2<Component> &) -> point<Component, 2>;
+
+#else
+};
+#endif
 
 template <typename T, class T_ = std::remove_cvref_t<T> >
 concept point_c
