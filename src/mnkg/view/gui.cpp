@@ -291,7 +291,9 @@ public:
                 auto viewport_size = board_.viewport_size();
                 window_.create(sf::VideoMode(viewport_size),
                                settings.title,
-                               sf::Style::Titlebar | sf::Style::Close);
+                               sf::Style::Titlebar | sf::Style::Close,
+                               sf::State::Windowed,
+                               { .antiAliasingLevel = 8 });
                 renders_ = { sf::RenderTexture(viewport_size),
                              sf::RenderTexture(viewport_size) };
 
