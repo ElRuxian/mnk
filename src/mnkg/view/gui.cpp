@@ -13,31 +13,46 @@
 #include <SFML/System/Angle.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Mouse.hpp>
-#include <algorithm>
 #include <array>
 #include <cassert>
 #include <memory>
-#include <optional>
 #include <utility>
 
 #include "varia/point.hpp"
 
 namespace mnkg::view {
 
-struct board {
-        constexpr static point<uint, 2> cell_size = { 32u, 32u }; // pixels
-        const point<uint, 2>            size;                     // cells
+static constexpr sf::Vector2u cell_viewport_size = { 32u, 32u };
 
-        std::optional<point<uint, 2> >
-        map(sf::Vector2i position) const
+enum class space {
+        grid,     // board cells
+        viewport, // pixels
+};
+
+struct board {
+        const point<uint, 2> grid_size;
+
+        constexpr sf::Vector2u
+                  viewport_size() const
         {
-                auto x = position.x / cell_size[0];
-                auto y = position.y / cell_size[1];
-                if (position.x < 0 || position.y < 0)
-                        return std::nullopt;
-                if (x >= size[0] || y >= size[1])
-                        return std::nullopt;
-                return point(static_cast<uint>(x), static_cast<uint>(y));
+                return transform(
+                    std::multiplies{}, { cell_viewport_size }, grid_size);
+        }
+
+        constexpr inline sf::Vector2f
+        map_grid_to_view(auto cell_coord) const
+        {
+                return transform(std::multiplies{},
+                                 point<float, 2>{ cell_coord },
+                                 point<float, 2>{ point(cell_viewport_size) });
+        }
+
+        constexpr inline point<int, 2>
+        map_view_to_grid(auto position) const
+        {
+                return transform(std::divides{},
+                                 point<int, 2>{ position },
+                                 point<int, 2>{ point(cell_viewport_size) });
         }
 };
 
@@ -75,28 +90,26 @@ sf::Texture
 texture<style::tictactoe, board>(const board &board)
 {
 
-        auto size = transform(std::multiplies{}, board.size, board.cell_size);
-
-        auto texture = sf::RenderTexture(size);
+        auto texture = sf::RenderTexture(board.viewport_size());
 
         texture.clear(sf::Color::White);
 
         sf::RectangleShape line;
         constexpr auto     line_thickness = 2; // arbitrary; looks ok
 
-        for (uint i = 1; i < board.size[0]; ++i) {
+        for (uint i = 1; i < board.grid_size[0]; ++i) {
                 auto size = sf::Vector2f(line_thickness, texture.getSize().y);
                 line.setSize(size);
-                auto position = sf::Vector2<float>(i * board.cell_size[1], 0);
+                auto position = sf::Vector2<float>(i * cell_viewport_size.y, 0);
                 line.setPosition(position);
                 line.setFillColor(sf::Color::Black);
                 texture.draw(line);
         }
 
-        for (uint i = 1; i < board.size[1]; ++i) {
+        for (uint i = 1; i < board.grid_size[1]; ++i) {
                 auto size = sf::Vector2f(texture.getSize().x, line_thickness);
                 line.setSize(size);
-                auto position = sf::Vector2<float>(0, i * board.cell_size[1]);
+                auto position = sf::Vector2<float>(0, i * cell_viewport_size.y);
                 line.setPosition(position);
                 line.setFillColor(sf::Color::Black);
                 texture.draw(line);
@@ -111,28 +124,25 @@ sf::Texture
 texture<style::connect_four, board>(const board &board)
 {
 
-        auto size = transform(std::multiplies{}, board.size, board.cell_size);
-
-        auto texture = sf::RenderTexture(size);
+        auto texture = sf::RenderTexture(board.viewport_size());
 
         texture.clear(sf::Color::Blue);
 
         // TODO: refactor
         //       (this block of code it repeated in texture<tic_tac_toe, stone>)
         constexpr auto max_dimension
-            = std::max(board::cell_size[0], board::cell_size[1]);
+            = std::max(cell_viewport_size.x, cell_viewport_size.y);
         constexpr auto  radius = max_dimension * stone::size_factor / 2;
         sf::CircleShape shape(radius);
 
         shape.setFillColor(sf::Color::White);
 
-        for (uint x = 0; x < board.size[0]; ++x)
-                for (uint y = 0; y < board.size[1]; ++y) {
-                        auto position = sf::Vector2f(x * board.cell_size[0],
-                                                     y * board.cell_size[1]);
-                        position
-                            += sf::Vector2f(board.cell_size[0] / 2.f - radius,
-                                            board.cell_size[1] / 2.f - radius);
+        for (auto x = 0; x < board.grid_size[0]; ++x)
+                for (auto y = 0; y < board.grid_size[1]; ++y) {
+                        auto coord    = point<int, 2>{ x, y };
+                        auto position = board.map_grid_to_view(coord);
+                        position += sf::Vector2f(cell_viewport_size) / 2.f;
+                        position -= sf::Vector2f(radius, radius);
                         shape.setPosition(position);
                         texture.draw(shape);
                 }
@@ -146,38 +156,36 @@ sf::Texture
 texture<style::go, board>(const board &board)
 {
 
-        auto size = transform(std::multiplies{}, board.size, board.cell_size);
-
-        auto texture = sf::RenderTexture(size);
+        auto texture = sf::RenderTexture(board.viewport_size());
 
         sf::Color wood_color = { 222, 184, 135 };
         texture.clear(wood_color);
 
         constexpr auto max_dimension
-            = std::max(board::cell_size[0], board::cell_size[1]);
+            = std::max(cell_viewport_size.x, cell_viewport_size.y);
 
         sf::RectangleShape line;
         constexpr float    line_thickness = max_dimension * 0.1f;
 
-        for (uint x = 0; x < board.size[0]; ++x) {
+        for (uint x = 0; x < board.grid_size[0]; ++x) {
                 auto size = sf::Vector2f(
-                    line_thickness, texture.getSize().y - board.cell_size[1]);
+                    line_thickness, texture.getSize().y - cell_viewport_size.y);
                 line.setSize(size);
-                auto position = sf::Vector2<float>(x * board.cell_size[0], 0);
-                position
-                    += { board.cell_size[0] / 2.f, board.cell_size[1] / 2.f };
+                auto position = sf::Vector2<float>(x * cell_viewport_size.x, 0);
+                position += { cell_viewport_size.x / 2.f,
+                              cell_viewport_size.y / 2.f };
                 line.setPosition(position);
                 line.setFillColor(sf::Color::Black);
                 texture.draw(line);
         }
 
-        for (uint y = 0; y < board.size[1]; ++y) {
+        for (uint y = 0; y < board.grid_size[1]; ++y) {
                 auto size = sf::Vector2f(
-                    texture.getSize().x - board.cell_size[0], line_thickness);
+                    texture.getSize().x - cell_viewport_size.x, line_thickness);
                 line.setSize(size);
-                auto position = sf::Vector2<float>(0, y * board.cell_size[1]);
-                position
-                    += { board.cell_size[0] / 2.f, board.cell_size[1] / 2.f };
+                auto position = sf::Vector2<float>(0, y * cell_viewport_size.y);
+                position += { cell_viewport_size.x / 2.f,
+                              cell_viewport_size.y / 2.f };
                 line.setPosition(position);
                 line.setFillColor(sf::Color::Black);
                 texture.draw(line);
@@ -191,9 +199,9 @@ template <>
 sf::Texture
 texture<style::connect_four, stone>(const stone &stone)
 {
-        auto           texture = sf::RenderTexture(board::cell_size);
+        auto           texture = sf::RenderTexture(cell_viewport_size);
         constexpr auto max_dimension
-            = std::max(board::cell_size[0], board::cell_size[1]);
+            = std::max(cell_viewport_size.x, cell_viewport_size.y);
         constexpr auto  radius = max_dimension * stone::size_factor / 2;
         sf::CircleShape shape(radius);
         shape.setOrigin({ radius, radius }); // center
@@ -220,9 +228,9 @@ template <>
 sf::Texture
 texture<style::go, stone>(const stone &stone)
 {
-        auto           texture = sf::RenderTexture(board::cell_size);
+        auto           texture = sf::RenderTexture(cell_viewport_size);
         constexpr auto max_radius
-            = std::max(board::cell_size[0], board::cell_size[1]);
+            = std::max(cell_viewport_size.x, cell_viewport_size.y);
         constexpr auto  radius = max_radius * stone::size_factor / 2;
         sf::CircleShape shape(radius);
         shape.setOrigin({ radius, radius }); // center
@@ -249,10 +257,10 @@ template <>
 sf::Texture
 texture<style::tictactoe, stone>(const stone &stone)
 {
-        sf::RenderTexture texture(board::cell_size);
+        sf::RenderTexture texture(cell_viewport_size);
 
         constexpr float max_dimension
-            = std::max(board::cell_size[0], board::cell_size[1]);
+            = std::max(cell_viewport_size.x, cell_viewport_size.y);
         constexpr float line_thickness = max_dimension * 0.1f;
 
         texture.clear(sf::Color::Transparent);
@@ -260,7 +268,7 @@ texture<style::tictactoe, stone>(const stone &stone)
         if (stone.variant == 0) { // draw cross (X) sf::RectangleShape line1;
                 sf::RectangleShape line1, line2;
 
-                auto  center      = point<float, 2>(board::cell_size) / 2;
+                auto  center      = point<float, 2>(cell_viewport_size) / 2;
                 float line_length = max_dimension * 0.8f;
 
                 auto color = sf::Color::Red;
@@ -310,6 +318,7 @@ private:
         std::shared_ptr<mnkg::model::mnk::game> &game_;
         const struct settings                    settings_;
         sf::RenderWindow                         window_;
+        board                                    board_;
         point<int, 2>                            selected_cell_;
         struct textures {
                 sf::Texture                board;
@@ -321,17 +330,15 @@ private:
 
 public:
         implementation(auto &game, auto settings) :
-                game_(game), settings_(settings)
+                game_(game), settings_(settings),
+                board_{ point<uint, 2>(game_->board().get_size()) }
         {
-                const auto grid_size
-                    = point<uint, 2>(game_->board().get_size());
-                auto view_size
-                    = transform(std::multiplies{}, grid_size, board::cell_size);
-                window_.create(sf::VideoMode(view_size),
+                auto viewport_size = board_.viewport_size();
+                window_.create(sf::VideoMode(viewport_size),
                                settings.title,
                                sf::Style::Titlebar | sf::Style::Close);
-                renders_ = { sf::RenderTexture(view_size),
-                             sf::RenderTexture(view_size) };
+                renders_ = { sf::RenderTexture(viewport_size),
+                             sf::RenderTexture(viewport_size) };
 
                 // HACK: invert y-axis display; bugfix
                 {
@@ -342,12 +349,12 @@ public:
                         window_.setView(view);
                 }
 
-                textures_.board = texture(
-                    board{ { grid_size[0], grid_size[1] } }, settings.style);
+                textures_.board = texture(board_, settings.style);
 
-                for (uint i = 0; i < model::mnk::game::player_count(); ++i) {
+                for (uint i = 0; i < model::mnk::game::player_count(); ++i)
                         textures_.stone[i] = texture(stone(i), settings.style);
-                }
+
+                assert(valid_(textures_));
 
                 render_background_();
         }
@@ -359,9 +366,8 @@ public:
                     = [&](const sf::Event::Closed &) { window_.close(); };
 
                 const auto on_move = [&](const sf::Event::MouseMoved &event) {
-                        auto coord = transform(std::divides{},
-                                               point<int, 2>(event.position),
-                                               point<int, 2>(board::cell_size));
+                        auto position = point<int, 2>(event.position);
+                        auto coord    = board_.map_view_to_grid(position);
                         if (coord != selected_cell_) {
                                 selected_cell_ = coord;
                                 clear_phantom_stones_();
@@ -405,21 +411,18 @@ public:
 
 private:
         bool
-        is_valid_(const struct textures &textures) const
+        valid_(const struct textures &textures) const
         {
                 bool valid_board = [&]() {
                         const auto &size     = textures.board.getSize();
-                        auto        expected = transform(
-                            std::multiplies{},
-                            point<uint, 2>(game_->board().get_size()),
-                            board::cell_size);
+                        auto        expected = board_.viewport_size();
                         return size == static_cast<point<uint, 2> >(expected);
                 }();
 
                 bool valid_stones = [&]() {
                         for (const auto &stone : textures.stone) {
                                 const auto &size     = stone.getSize();
-                                const auto &expected = board::cell_size;
+                                const auto &expected = cell_viewport_size;
                                 if (size != expected)
                                         return false;
                         }
@@ -450,9 +453,7 @@ private:
         draw_stone_(unsigned int texture_index, point<int, 2> cell_coords)
         {
                 sf::Sprite sprite(textures_.stone[texture_index]);
-                auto       position = transform(std::multiplies{},
-                                          point<float, 2>(cell_coords),
-                                          point<float, 2>(board::cell_size));
+                auto       position = board_.map_grid_to_view(cell_coords);
                 sprite.setPosition(position);
                 renders_.game.draw(sprite);
         }
@@ -466,10 +467,8 @@ private:
                 sf::Color      color;
                 color.a *= opacity_factor; // alpha channel
                 sprite.setColor(color);
-                auto position = transform(std::multiplies{},
-                                          point<float, 2>(cell_coords),
-                                          point<float, 2>(board::cell_size));
-                sprite.setPosition({ position[0], position[1] });
+                auto position = board_.map_grid_to_view(cell_coords);
+                sprite.setPosition(position);
                 renders_.overlay.draw(sprite);
         }
 
