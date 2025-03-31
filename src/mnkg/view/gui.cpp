@@ -1,4 +1,5 @@
 #include "gui.hpp"
+#include "varia/point.hpp"
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/Graphics/Color.hpp>
@@ -13,12 +14,7 @@
 #include <SFML/System/Angle.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Mouse.hpp>
-#include <array>
-#include <cassert>
-#include <memory>
 #include <utility>
-
-#include "varia/point.hpp"
 
 namespace mnkg::view {
 
@@ -54,6 +50,7 @@ struct board {
 struct stone {
         constexpr static float size_factor = 0.8; // relative to cell
         uint                   variant;           // simple index
+        static constexpr uint  variant_count = 2;
         // Equal stones (same variant) look the same.
 };
 
@@ -273,23 +270,23 @@ texture<style::tictactoe, stone>(const stone &stone)
 
 class gui::implementation {
 private:
-        std::shared_ptr<mnkg::model::mnk::game> &game_;
-        const struct settings                    settings_;
-        sf::RenderWindow                         window_;
-        board                                    board_;
-        point<int, 2>                            selected_cell_;
+        sf::RenderWindow         window_;
+        callbacks                callbacks_;
+        board                    board_;
+        point<int, 2>            hovered_cell_;
+        std::set<point<int, 2> > selectable_cells_;
+        uint                     stone_skin_index_;
         struct textures {
-                sf::Texture                board;
-                std::array<sf::Texture, 2> stone; // two variations
+                sf::Texture                                   board;
+                std::array<sf::Texture, stone::variant_count> stone;
         } textures_;
         struct {
                 sf::RenderTexture game, overlay;
         } renders_;
 
 public:
-        implementation(auto &game, auto settings) :
-                game_(game), settings_(settings),
-                board_{ point<uint, 2>(game_->board().get_size()) }
+        implementation(const struct settings &settings) :
+                callbacks_(settings.callbacks), board_{ settings.board_size }
         {
                 auto viewport_size = board_.viewport_size();
                 window_.create(sf::VideoMode(viewport_size),
@@ -308,17 +305,42 @@ public:
                 }
 
                 textures_.board = texture(board_, settings.style);
-
-                for (uint i = 0; i < model::mnk::game::player_count(); ++i)
+                for (uint i = 0; i < stone::variant_count; ++i)
                         textures_.stone[i] = texture(stone(i), settings.style);
-
                 assert(valid_(textures_));
 
                 render_background_();
         }
 
         void
-        do_run()
+        draw_stone(unsigned int texture_index, point<int, 2> cell_coords)
+        {
+                assert(texture_index < textures_.stone.size());
+                sf::Sprite sprite(textures_.stone[texture_index]);
+                sprite.setPosition(board_.map_grid_to_view(cell_coords));
+                renders_.game.draw(sprite);
+        }
+
+        void
+        draw_stone(point<int, 2> cell_coords)
+        {
+                draw_stone(stone_skin_index_, cell_coords);
+        }
+
+        inline void
+        set_selectable_cells(std::set<point<int, 2> > cells)
+        {
+                selectable_cells_ = std::move(cells);
+        }
+
+        inline void
+        set_stone_skin(uint index)
+        {
+                stone_skin_index_ = index;
+        }
+
+        void
+        run()
         {
                 const auto on_close
                     = [&](const sf::Event::Closed &) { window_.close(); };
@@ -326,13 +348,11 @@ public:
                 const auto on_move = [&](const sf::Event::MouseMoved &event) {
                         auto position = point<int, 2>(event.position);
                         auto coord    = board_.map_view_to_grid(position);
-                        if (coord != selected_cell_) {
-                                selected_cell_ = coord;
+                        if (coord != hovered_cell_) {
+                                hovered_cell_ = coord;
                                 clear_phantom_stones_();
-                                if (game_->is_playable(selected_cell_))
-                                        draw_phantom_stone_(
-                                            game_->current_player(),
-                                            selected_cell_);
+                                if (selectable_(hovered_cell_))
+                                        draw_phantom_stone_(hovered_cell_);
                                 redraw_window_();
                         };
                 };
@@ -342,25 +362,22 @@ public:
                         redraw_window_();
                 };
 
-                const auto on_entered =
-                    [&](const sf::Event::MouseEntered &event) {
-                            if (game_->is_playable(selected_cell_))
-                                    draw_phantom_stone_(game_->current_player(),
-                                                        selected_cell_);
-                            redraw_window_();
-                    };
-
-                const auto on_click
-                    = [&](const sf::Event::MouseButtonPressed &event) {
-                              if (event.button == sf::Mouse::Button::Left
-                                  && game_->is_playable(selected_cell_)) {
-                                      clear_phantom_stones_();
-                                      draw_stone_(game_->current_player(),
-                                                  selected_cell_);
-                                      game_->play(selected_cell_);
-                                      redraw_window_();
-                              }
+                const auto on_entered
+                    = [&](const sf::Event::MouseEntered &event) {
+                              if (selectable_(hovered_cell_))
+                                      draw_phantom_stone_(hovered_cell_);
+                              redraw_window_();
                       };
+
+                const auto on_click =
+                    [&](const sf::Event::MouseButtonPressed &event) {
+                            if (event.button == sf::Mouse::Button::Left
+                                && selectable_(hovered_cell_)) {
+                                    clear_phantom_stones_();
+                                    redraw_window_();
+                                    callbacks_.on_cell_selected(hovered_cell_);
+                            }
+                    };
 
                 while (window_.isOpen())
                         window_.handleEvents(
@@ -390,15 +407,10 @@ private:
                 return valid_board && valid_stones;
         }
 
-        void
-        select_cell_(auto coords)
+        bool
+        selectable_(auto coords) const
         {
-                selected_cell_ = coords;
-                clear_phantom_stones_();
-                if (game_->is_playable(coords))
-                        draw_phantom_stone_(game_->current_player(),
-                                            selected_cell_);
-                redraw_window_();
+                return selectable_cells_.contains(coords);
         }
 
         void
@@ -408,26 +420,22 @@ private:
         };
 
         void
-        draw_stone_(unsigned int texture_index, point<int, 2> cell_coords)
-        {
-                sf::Sprite sprite(textures_.stone[texture_index]);
-                auto       position = board_.map_grid_to_view(cell_coords);
-                sprite.setPosition(position);
-                renders_.game.draw(sprite);
-        }
-
-        void
         draw_phantom_stone_(unsigned int  texture_index,
                             point<int, 2> cell_coords)
         {
-                sf::Sprite     sprite(textures_.stone[texture_index]);
-                constexpr auto opacity_factor = 0.3f;
-                sf::Color      color;
-                color.a *= opacity_factor; // alpha channel
+                assert(texture_index < textures_.stone.size());
+                sf::Sprite sprite(textures_.stone[texture_index]);
+                sf::Color  color;
+                color.a *= 0.3f; // 30% opacity
                 sprite.setColor(color);
-                auto position = board_.map_grid_to_view(cell_coords);
-                sprite.setPosition(position);
+                sprite.setPosition(board_.map_grid_to_view(cell_coords));
                 renders_.overlay.draw(sprite);
+        }
+
+        void
+        draw_phantom_stone_(point<int, 2> cell_coords)
+        {
+                draw_phantom_stone_(stone_skin_index_, cell_coords);
         }
 
         void
@@ -445,17 +453,35 @@ private:
         }
 };
 
-gui::gui(std::shared_ptr<mnkg::model::mnk::game> &game, settings settings) :
-        pimpl_(std::make_unique<implementation>(game, settings))
+gui::gui(const settings &settings) :
+        pimpl_(std::make_unique<implementation>(settings))
 {
 }
 
 gui::~gui() = default;
 
-void
+inline void
 gui::run()
 {
-        pimpl_->do_run();
+        pimpl_->run();
+}
+
+inline void
+gui::set_selectable_cells(const std::set<point<int, 2> > &coords)
+{
+        pimpl_->set_selectable_cells(coords);
+}
+
+inline void
+gui::set_stone_skin(uint index)
+{
+        pimpl_->set_stone_skin(index);
+}
+
+inline void
+gui::draw_stone(point<int, 2> cell_coords)
+{
+        pimpl_->draw_stone(cell_coords);
 }
 
 } // namespace mnkg::view

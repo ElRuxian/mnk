@@ -1,7 +1,8 @@
 #pragma once
 
-#include "model/mnk/game.hpp" // TODO: MVC pattern
+#include "varia/point.hpp"
 #include <memory>
+#include <set>
 
 namespace mnkg::view {
 
@@ -11,20 +12,34 @@ enum class style {
         go,
 };
 
+struct callbacks {
+        std::function<void(point<int, 2>)> on_cell_selected;
+};
+
 struct settings {
-        std::string title = "MNK Game";
-        style       style = style::tictactoe;
+        std::string    title = "MNK Game";
+        style          style = style::tictactoe;
+        callbacks      callbacks;
+        point<uint, 2> board_size;
 };
 
 class gui {
 public:
-        gui(std::shared_ptr<mnkg::model::mnk::game> &game,
-            settings                                 settings = {});
+        gui(const settings &settings);
 
         ~gui();
 
         void
-        run();
+        run(); // occupies calling thread to manage the window
+
+        void
+        set_selectable_cells(const std::set<point<int, 2> > &coords);
+
+        void
+        set_stone_skin(uint index);
+
+        void
+        draw_stone(point<int, 2> cell_coords);
 
 private:
         class implementation;
