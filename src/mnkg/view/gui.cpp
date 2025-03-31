@@ -24,11 +24,6 @@ namespace mnkg::view {
 
 static constexpr sf::Vector2u cell_viewport_size = { 32u, 32u };
 
-enum class space {
-        grid,     // board cells
-        viewport, // pixels
-};
-
 struct board {
         const point<uint, 2> grid_size;
 
@@ -73,8 +68,7 @@ template <typename Renderable>
 sf::Texture
 texture(const Renderable &renderable, style style)
 {
-        // HACK: Shit ass switch. Must be refactored later.
-        //       "Make it work first".
+        // HACK: Bad switch. Must be refactored later.
         switch (style) {
         case style::tictactoe:
                 return texture<style::tictactoe>(renderable);
@@ -91,27 +85,21 @@ texture<style::tictactoe, board>(const board &board)
 {
 
         auto texture = sf::RenderTexture(board.viewport_size());
-
         texture.clear(sf::Color::White);
 
         sf::RectangleShape line;
         constexpr auto     line_thickness = 2; // arbitrary; looks ok
+        line.setFillColor(sf::Color::Black);
 
+        line.setSize(sf::Vector2f(line_thickness, texture.getSize().y));
         for (uint i = 1; i < board.grid_size[0]; ++i) {
-                auto size = sf::Vector2f(line_thickness, texture.getSize().y);
-                line.setSize(size);
-                auto position = sf::Vector2<float>(i * cell_viewport_size.y, 0);
-                line.setPosition(position);
-                line.setFillColor(sf::Color::Black);
+                line.setPosition(sf::Vector2f(i * cell_viewport_size.y, 0));
                 texture.draw(line);
         }
 
+        line.setSize(sf::Vector2f(texture.getSize().x, line_thickness));
         for (uint i = 1; i < board.grid_size[1]; ++i) {
-                auto size = sf::Vector2f(texture.getSize().x, line_thickness);
-                line.setSize(size);
-                auto position = sf::Vector2<float>(0, i * cell_viewport_size.y);
-                line.setPosition(position);
-                line.setFillColor(sf::Color::Black);
+                line.setPosition(sf::Vector2f(0, i * cell_viewport_size.y));
                 texture.draw(line);
         }
 
@@ -125,28 +113,20 @@ texture<style::connect_four, board>(const board &board)
 {
 
         auto texture = sf::RenderTexture(board.viewport_size());
-
         texture.clear(sf::Color::Blue);
-
-        // TODO: refactor
-        //       (this block of code it repeated in texture<tic_tac_toe, stone>)
         constexpr auto max_dimension
             = std::max(cell_viewport_size.x, cell_viewport_size.y);
         constexpr auto  radius = max_dimension * stone::size_factor / 2;
         sf::CircleShape shape(radius);
-
         shape.setFillColor(sf::Color::White);
-
         for (auto x = 0; x < board.grid_size[0]; ++x)
                 for (auto y = 0; y < board.grid_size[1]; ++y) {
-                        auto coord    = point<int, 2>{ x, y };
-                        auto position = board.map_grid_to_view(coord);
+                        auto position = board.map_grid_to_view(point{ x, y });
                         position += sf::Vector2f(cell_viewport_size) / 2.f;
                         position -= sf::Vector2f(radius, radius);
                         shape.setPosition(position);
                         texture.draw(shape);
                 }
-
         texture.display();
         return texture.getTexture();
 };
@@ -155,42 +135,29 @@ template <>
 sf::Texture
 texture<style::go, board>(const board &board)
 {
-
-        auto texture = sf::RenderTexture(board.viewport_size());
-
+        auto      texture    = sf::RenderTexture(board.viewport_size());
         sf::Color wood_color = { 222, 184, 135 };
         texture.clear(wood_color);
-
         constexpr auto max_dimension
             = std::max(cell_viewport_size.x, cell_viewport_size.y);
-
         sf::RectangleShape line;
-        constexpr float    line_thickness = max_dimension * 0.1f;
-
+        line.setFillColor(sf::Color::Black);
+        constexpr float line_thickness = max_dimension * 0.1f;
+        auto            grid_size      = texture.getSize() - cell_viewport_size;
         for (uint x = 0; x < board.grid_size[0]; ++x) {
-                auto size = sf::Vector2f(
-                    line_thickness, texture.getSize().y - cell_viewport_size.y);
-                line.setSize(size);
-                auto position = sf::Vector2<float>(x * cell_viewport_size.x, 0);
-                position += { cell_viewport_size.x / 2.f,
-                              cell_viewport_size.y / 2.f };
+                line.setSize(sf::Vector2f(line_thickness, grid_size.y));
+                auto position = sf::Vector2f(x * cell_viewport_size.x, 0);
+                position += sf::Vector2f(cell_viewport_size) / 2.f;
                 line.setPosition(position);
-                line.setFillColor(sf::Color::Black);
                 texture.draw(line);
         }
-
         for (uint y = 0; y < board.grid_size[1]; ++y) {
-                auto size = sf::Vector2f(
-                    texture.getSize().x - cell_viewport_size.x, line_thickness);
-                line.setSize(size);
-                auto position = sf::Vector2<float>(0, y * cell_viewport_size.y);
-                position += { cell_viewport_size.x / 2.f,
-                              cell_viewport_size.y / 2.f };
+                line.setSize(sf::Vector2f(grid_size.x, line_thickness));
+                auto position = sf::Vector2f(0, y * cell_viewport_size.y);
+                position += sf::Vector2f(cell_viewport_size) / 2.f;
                 line.setPosition(position);
-                line.setFillColor(sf::Color::Black);
                 texture.draw(line);
         }
-
         texture.display();
         return texture.getTexture();
 };
@@ -204,9 +171,9 @@ texture<style::connect_four, stone>(const stone &stone)
             = std::max(cell_viewport_size.x, cell_viewport_size.y);
         constexpr auto  radius = max_dimension * stone::size_factor / 2;
         sf::CircleShape shape(radius);
-        shape.setOrigin({ radius, radius }); // center
-        auto center = static_cast<float>(max_dimension) / 2;
-        shape.setPosition({ center, center });
+        shape.setOrigin({ radius, radius });
+        auto center = sf::Vector2f(cell_viewport_size) / 2.f;
+        shape.setPosition(center);
         switch (stone.variant) {
         case 0:
                 shape.setFillColor(sf::Color::Red);
@@ -215,7 +182,7 @@ texture<style::connect_four, stone>(const stone &stone)
                 shape.setFillColor(sf::Color::Yellow);
                 break;
         default:
-                assert("Unrecognized stone variant");
+                assert(!"unrecognized stone variant");
                 std::unreachable(); // test the code!
         }
         texture.clear(sf::Color::Transparent);
@@ -234,8 +201,8 @@ texture<style::go, stone>(const stone &stone)
         constexpr auto  radius = max_radius * stone::size_factor / 2;
         sf::CircleShape shape(radius);
         shape.setOrigin({ radius, radius }); // center
-        auto center = static_cast<float>(max_radius) / 2;
-        shape.setPosition({ center, center });
+        auto center = sf::Vector2f(cell_viewport_size) / 2.f;
+        shape.setPosition(center);
         switch (stone.variant) {
         case 0:
                 shape.setFillColor(sf::Color::White);
@@ -262,47 +229,38 @@ texture<style::tictactoe, stone>(const stone &stone)
         constexpr float max_dimension
             = std::max(cell_viewport_size.x, cell_viewport_size.y);
         constexpr float line_thickness = max_dimension * 0.1f;
+        auto            center         = sf::Vector2f(cell_viewport_size) / 2.f;
 
         texture.clear(sf::Color::Transparent);
 
         if (stone.variant == 0) { // draw cross (X) sf::RectangleShape line1;
-                sf::RectangleShape line1, line2;
+                sf::RectangleShape line;
 
-                auto  center      = point<float, 2>(cell_viewport_size) / 2;
                 float line_length = max_dimension * 0.8f;
+                auto  size        = sf::Vector2f(line_length, line_thickness);
+                auto  angle       = sf::degrees(45.0f);
+                auto  color       = sf::Color::Red;
 
-                auto color = sf::Color::Red;
+                line.setSize(size);
+                line.setOrigin(size / 2.f);
+                line.setPosition(center);
+                line.setFillColor(color);
 
-                // Configure the first diagonal line
-                line1.setSize({ line_length, line_thickness });
-                line1.setOrigin({ line_length / 2.0f, line_thickness / 2.0f });
-                line1.setPosition(center);
-                line1.setRotation(sf::degrees(45.0f));
-                line1.setFillColor(color);
-                sf::Angle angle;
+                line.setRotation(angle);
+                texture.draw(line);
 
-                // Configure the second diagonal line
-                line2.setSize({ line_length, line_thickness });
-                line2.setOrigin({ line_length / 2.0f, line_thickness / 2.0f });
-                line2.setPosition(center);
-                line2.setRotation(sf::degrees(-45.0f));
-                line2.setFillColor(color);
+                line.setRotation(-angle);
+                texture.draw(line);
 
-                texture.draw(line1);
-                texture.draw(line2);
         } else if (stone.variant == 1) { // draw circle (O)
-                constexpr float radius
-                    = (max_dimension * stone::size_factor - line_thickness)
-                      / 2.0f;
-                sf::CircleShape circle(radius);
-                circle.setOrigin({ radius - line_thickness / 2.f,
-                                   radius - line_thickness / 2.f }); // center
-                auto center = static_cast<float>(max_dimension) / 2;
-                circle.setPosition({ center, center });
-                circle.setFillColor(sf::Color::Transparent);
-                circle.setOutlineColor(sf::Color::Blue);
-                circle.setOutlineThickness(line_thickness);
-                texture.draw(circle);
+                constexpr auto  radius = max_dimension * stone::size_factor / 2;
+                sf::CircleShape shape(radius);
+                shape.setOrigin({ radius, radius }); // center
+                shape.setPosition(center);
+                shape.setFillColor(sf::Color::Transparent);
+                shape.setOutlineColor(sf::Color::Blue);
+                shape.setOutlineThickness(-line_thickness);
+                texture.draw(shape);
 
         } else {
                 assert("Unrecognized stone variant");
@@ -415,8 +373,8 @@ private:
         {
                 bool valid_board = [&]() {
                         const auto &size     = textures.board.getSize();
-                        auto        expected = board_.viewport_size();
-                        return size == static_cast<point<uint, 2> >(expected);
+                        const auto &expected = board_.viewport_size();
+                        return size == expected;
                 }();
 
                 bool valid_stones = [&]() {
