@@ -463,25 +463,25 @@ gui::gui(const settings &settings) :
 
 gui::~gui() = default;
 
-inline void
+void
 gui::run()
 {
         pimpl_->run();
 }
 
-inline void
+void
 gui::set_selectable_cells(const std::vector<point<int, 2> > &coords)
 {
         pimpl_->set_selectable_cells(coords);
 }
 
-inline void
+void
 gui::set_stone_skin(uint index)
 {
         pimpl_->set_stone_skin(index);
 }
 
-inline void
+void
 gui::draw_stone(point<int, 2> cell_coords)
 {
         pimpl_->draw_stone(cell_coords);
