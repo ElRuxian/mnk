@@ -325,6 +325,7 @@ public:
         draw_stone(point<int, 2> cell_coords)
         {
                 draw_stone(stone_skin_index_, cell_coords);
+                redraw_window_();
         }
 
         inline void
