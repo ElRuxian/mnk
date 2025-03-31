@@ -270,12 +270,12 @@ texture<style::tictactoe, stone>(const stone &stone)
 
 class gui::implementation {
 private:
-        sf::RenderWindow         window_;
-        callbacks                callbacks_;
-        board                    board_;
-        point<int, 2>            hovered_cell_;
-        std::set<point<int, 2> > selectable_cells_;
-        uint                     stone_skin_index_;
+        sf::RenderWindow            window_;
+        callbacks                   callbacks_;
+        board                       board_;
+        point<int, 2>               hovered_cell_;
+        std::vector<point<int, 2> > selectable_cells_;
+        uint                        stone_skin_index_;
         struct textures {
                 sf::Texture                                   board;
                 std::array<sf::Texture, stone::variant_count> stone;
@@ -328,7 +328,7 @@ public:
         }
 
         inline void
-        set_selectable_cells(std::set<point<int, 2> > cells)
+        set_selectable_cells(std::vector<point<int, 2> > cells)
         {
                 selectable_cells_ = std::move(cells);
         }
@@ -410,7 +410,10 @@ private:
         bool
         selectable_(auto coords) const
         {
-                return selectable_cells_.contains(coords);
+                return std::find(selectable_cells_.begin(),
+                                 selectable_cells_.end(),
+                                 coords)
+                       != selectable_cells_.end();
         }
 
         void
@@ -467,7 +470,7 @@ gui::run()
 }
 
 inline void
-gui::set_selectable_cells(const std::set<point<int, 2> > &coords)
+gui::set_selectable_cells(const std::vector<point<int, 2> > &coords)
 {
         pimpl_->set_selectable_cells(coords);
 }

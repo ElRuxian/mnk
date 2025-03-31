@@ -2,7 +2,6 @@
 
 #include "varia/point.hpp"
 #include <memory>
-#include <set>
 
 namespace mnkg::view {
 
@@ -33,7 +32,7 @@ public:
         run(); // occupies calling thread to manage the window
 
         void
-        set_selectable_cells(const std::set<point<int, 2> > &coords);
+        set_selectable_cells(const std::vector<point<int, 2> > &coords);
 
         void
         set_stone_skin(uint index);
