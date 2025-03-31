@@ -295,11 +295,12 @@ public:
                 renders_ = { sf::RenderTexture(viewport_size),
                              sf::RenderTexture(viewport_size) };
 
-                // HACK: invert y-axis display; bugfix
+                // flip image vertically
+                // (window and renders have different coordinate systems)
                 {
                         auto view = window_.getView();
-                        auto size = sf::Vector2f(window_.getSize());
-                        size.y *= -1.f;
+                        auto size = view.getSize();
+                        size.y *= -1;
                         view.setSize(size);
                         window_.setView(view);
                 }
