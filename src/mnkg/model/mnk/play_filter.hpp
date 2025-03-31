@@ -53,7 +53,7 @@ public:
 // Intended for games like Connect Four
 class gravity : public play_filter::base {
 public:
-        gravity(board::position direction = { 1, 0 }) : direction_(direction)
+        gravity(board::position direction = { 0, 1 }) : direction_(direction)
         {
                 assert(norm<metric::chebyshev>(direction) == 1);
         }
