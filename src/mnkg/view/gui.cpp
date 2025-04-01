@@ -1,4 +1,5 @@
 #include "gui.hpp"
+#include "SFML/Window/WindowEnums.hpp"
 #include "varia/point.hpp"
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/CircleShape.hpp>
@@ -14,11 +15,13 @@
 #include <SFML/System/Angle.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Mouse.hpp>
+#include <SFML/Window/VideoMode.hpp>
+#include <print>
 #include <utility>
 
 namespace mnkg::view {
 
-static constexpr sf::Vector2u cell_viewport_size = { 32u, 32u };
+static constexpr sf::Vector2u cell_viewport_size = { 128u, 128u };
 
 struct board {
         const point<uint, 2> grid_size;
@@ -46,6 +49,12 @@ struct board {
                                  point<int, 2>{ point(cell_viewport_size) });
         }
 };
+
+float
+aspect_ratio(auto size)
+{
+        return static_cast<float>(size.x) / size.y;
+}
 
 struct stone {
         constexpr static float size_factor = 0.8; // relative to cell
@@ -230,13 +239,12 @@ texture<style::tictactoe, stone>(const stone &stone)
 
         texture.clear(sf::Color::Transparent);
 
-        if (stone.variant == 0) { // draw cross (X) sf::RectangleShape line1;
+        if (stone.variant == 0) { // draw cross (X)
                 sf::RectangleShape line;
-
-                float line_length = max_dimension * 0.8f;
-                auto  size        = sf::Vector2f(line_length, line_thickness);
-                auto  angle       = sf::degrees(45.0f);
-                auto  color       = sf::Color::Red;
+                float              line_length = max_dimension * 0.8f;
+                auto size  = sf::Vector2f(line_length, line_thickness);
+                auto angle = sf::degrees(45.0f);
+                auto color = sf::Color::Red;
 
                 line.setSize(size);
                 line.setOrigin(size / 2.f);
@@ -288,29 +296,31 @@ public:
         implementation(const struct settings &settings) :
                 callbacks_(settings.callbacks), board_{ settings.board_size }
         {
-                auto viewport_size = board_.viewport_size();
-                window_.create(sf::VideoMode(viewport_size),
+                const auto &desktop_mode = sf::VideoMode::getDesktopMode();
+                auto        board_size   = board_.viewport_size();
+                auto        screen_size  = sf::Vector2f{ desktop_mode.size };
+                auto        window_size  = sf::Vector2u{ screen_size * 0.75f };
+                window_size.x = window_size.y * aspect_ratio(board_size);
+
+                window_.create(sf::VideoMode(window_size),
                                settings.title,
                                sf::Style::Titlebar | sf::Style::Close,
                                sf::State::Windowed,
                                { .antiAliasingLevel = 8 });
-                renders_ = { sf::RenderTexture(viewport_size),
-                             sf::RenderTexture(viewport_size) };
-
-                // flip image vertically
-                // (window and renders have different coordinate systems)
-                {
-                        auto view = window_.getView();
-                        auto size = view.getSize();
-                        size.y *= -1;
-                        view.setSize(size);
-                        window_.setView(view);
-                }
+                renders_ = { sf::RenderTexture(board_size),
+                             sf::RenderTexture(board_size) };
 
                 textures_.board = texture(board_, settings.style);
                 for (uint i = 0; i < stone::variant_count; ++i)
                         textures_.stone[i] = texture(stone(i), settings.style);
                 assert(valid_(textures_));
+
+                auto view      = window_.getView();
+                auto view_size = sf::Vector2f(board_size);
+                view.setCenter(view_size / 2.f);
+                view_size.y *= -1; // flip to match renders coord system
+                view.setSize(view_size);
+                window_.setView(view);
 
                 render_background_();
         }
@@ -350,15 +360,17 @@ public:
                     = [&](const sf::Event::Closed &) { window_.close(); };
 
                 const auto on_move = [&](const sf::Event::MouseMoved &event) {
-                        auto position = point<int, 2>(event.position);
-                        auto coord    = board_.map_view_to_grid(position);
+                        auto cell_size = window_.getSize().componentWiseDiv(
+                            board_.grid_size);
+                        auto coord = event.position.componentWiseDiv(
+                            sf::Vector2i{ cell_size });
                         if (coord != hovered_cell_) {
                                 hovered_cell_ = coord;
                                 clear_phantom_stones_();
                                 if (selectable_(hovered_cell_))
                                         draw_phantom_stone_(hovered_cell_);
                                 redraw_window_();
-                        };
+                        }
                 };
 
                 const auto on_left = [&](const sf::Event::MouseLeft &event) {
@@ -424,7 +436,7 @@ private:
         render_background_()
         {
                 renders_.game.draw(sf::Sprite(textures_.board));
-        };
+        }
 
         void
         draw_phantom_stone_(unsigned int  texture_index,
@@ -454,8 +466,10 @@ private:
         void
         redraw_window_()
         {
-                window_.draw(sf::Sprite(renders_.game.getTexture()));
-                window_.draw(sf::Sprite(renders_.overlay.getTexture()));
+                auto layers = { renders_.game.getTexture(),
+                                renders_.overlay.getTexture() };
+                for (auto &layer : layers)
+                        window_.draw(sf::Sprite{ layer });
                 window_.display();
         }
 };
