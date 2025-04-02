@@ -1,7 +1,7 @@
 #pragma once
 
 #include <array>
-#include <optional>
+#include <generator>
 #include <type_traits>
 
 #include "grid.hpp"
@@ -44,12 +44,12 @@ length(const line_c auto &line)
 }
 
 template <grid_c Grid>
-std::optional<line<typename Grid::position> >
-find_line(const Grid &grid, const typename Grid::position &point)
+std::generator<line<typename Grid::position> >
+find_lines(const Grid &grid, const typename Grid::position &point)
 {
         using point_t = std::decay_t<decltype(point)>;
 
-        auto find_end = [&](const auto &stride) {
+        auto find_end = [&](const point_t &stride) -> point_t {
                 auto end = point;
                 auto it  = point + stride;
                 while (within(grid, it) && grid[it] == grid[point]) {
@@ -65,11 +65,9 @@ find_line(const Grid &grid, const typename Grid::position &point)
         for (auto &&dir : directions) {
                 line<point_t> line = { find_end(dir), find_end(-dir) };
                 if (length<metric::chebyshev>(line) > 0)
-                        return line;
+                        co_yield line;
         }
-        return std::nullopt;
 }
-
 } // namespace mnkg
 
 template <mnkg::line_c Line, typename CharT>

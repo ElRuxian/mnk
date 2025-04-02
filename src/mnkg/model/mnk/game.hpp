@@ -130,11 +130,13 @@ private:
         {
                 const auto &player = current_player();
                 board_[position]   = player;
-                if (auto line = find_line(board_, position)) {
-                        auto len = length<metric::chebyshev>(line.value()) + 1;
+                for (auto line : find_lines(board_, position)) {
+                        auto len = length<metric::chebyshev>(line) + 1;
                         if (rules_.overline ? len >= rules_.line_span
-                                            : len == rules_.line_span)
-                                result_ = { win{ player, line.value() } };
+                                            : len == rules_.line_span) {
+                                result_ = { win{ player, line } };
+                                return;
+                        }
                 }
                 if ((turn() + 1) == board_.get_cell_count() && !result_)
                         result_ = { tie{} };
