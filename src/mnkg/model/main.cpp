@@ -3,7 +3,6 @@
 #include <print>
 
 #include "mcts/ai.hpp"
-#include "mnk/builder.hpp"
 #include "mnk/game.hpp"
 
 using namespace mnkg::model::mnk;
@@ -56,15 +55,14 @@ void
 cli_game()
 {
         struct game_option {
-                std::string title;
-                game (*game)();
+                std::string    title;
+                game::settings settings;
         };
-        using builder = game::builder;
-        using enum builder::preset;
+        using enum game::preset;
         auto game_options = std::to_array<game_option>(
-            { { "Tic-Tac-Toe", builder::build<tictactoe> },
-              { "Connect Four", builder::build<connect4> },
-              { "Gomoku", builder::build<gomoku> } });
+            { { "Tic-Tac-Toe", game::configuration<tictactoe>() },
+              { "Connect Four", game::configuration<connect4>() },
+              { "Gomoku", game::configuration<gomoku>() } });
 
         std::optional<game> chosen_game = std::nullopt;
         std::println("SELECT GAME");
@@ -74,8 +72,8 @@ cli_game()
         while (not chosen_game.has_value()) {
                 std::cin >> chosen_game_indice;
                 if (chosen_game_indice <= game_options.size())
-                        chosen_game.emplace(
-                            game_options[chosen_game_indice - 1].game());
+                        chosen_game.emplace(std::move(
+                            game_options[chosen_game_indice - 1].settings));
                 else
                         std::println("Invalid choice!");
         }

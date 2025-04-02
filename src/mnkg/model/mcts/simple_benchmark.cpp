@@ -1,5 +1,4 @@
 #include "ai.hpp"
-#include "model/mnk/builder.hpp"
 #include "model/mnk/game.hpp"
 #include <iostream>
 
@@ -7,12 +6,12 @@ int
 main()
 {
         using namespace mnkg::model;
-        using builder = mnk::game::builder;
-        auto game     = builder::build<builder::preset::tictactoe>();
-        auto ai       = mcts::ai(
+        auto game = mnk::game(
+            mnk::game::configuration<mnk::game::preset::tictactoe>());
+        auto ai = mcts::ai(
             game,
             { .leaf_parallelization
-                    = std::thread::hardware_concurrency() }); // starts searching
+              = std::thread::hardware_concurrency() }); // starts searching
         auto seconds = 0;
         auto iters   = 0;
         while (true) {

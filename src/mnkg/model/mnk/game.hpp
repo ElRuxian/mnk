@@ -26,6 +26,13 @@ public:
                 } rules = {};
         };
 
+        enum class preset {
+                tictactoe,
+                connect4,
+                gomoku,
+        };
+
+public:
         game(settings &&settings) :
                 board_(settings.board.size), rules_(std::move(settings.rules))
         {
@@ -147,6 +154,32 @@ private:
         is_over_() const override
         {
                 return result_.has_value();
+        }
+
+public:
+        template <preset Preset>
+        static game::settings
+        configuration()
+        {
+                if constexpr (Preset == preset::tictactoe) {
+                        return {
+                                .board = { .size = { 3, 3 } },
+                                .rules = { .line_span = 3 },
+                        };
+                } else if constexpr (Preset == preset::connect4) {
+                        return {
+                                .board = { .size = { 7, 6 } },
+                                .rules = { .line_span   = 4,
+                                           .overline    = true,
+                                           .play_filter = std::make_unique<
+                                               play_filter::gravity>() },
+                        };
+                } else if constexpr (Preset == preset::gomoku) {
+                        return {
+                                .board = { .size = { 19, 19 } },
+                                .rules = { .line_span = 5, .overline = false },
+                        };
+                }
         }
 };
 
