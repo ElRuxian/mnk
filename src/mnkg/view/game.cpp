@@ -91,8 +91,8 @@ texture(const Renderable &renderable, game::style style)
         switch (style) {
         case tictactoe:
                 return texture<tictactoe>(renderable);
-        case connect_four:
-                return texture<connect_four>(renderable);
+        case connect4:
+                return texture<connect4>(renderable);
         case go:
                 return texture<go>(renderable);
         }
@@ -128,7 +128,7 @@ texture<game::style::tictactoe, board>(const board &board)
 
 template <>
 sf::Texture
-texture<game::style::connect_four, board>(const board &board)
+texture<game::style::connect4, board>(const board &board)
 {
 
         auto texture = sf::RenderTexture(board.viewport_size(), antialiasing);
@@ -182,7 +182,7 @@ texture<game::style::go, board>(const board &board)
 
 template <>
 sf::Texture
-texture<game::style::connect_four, stone>(const stone &stone)
+texture<game::style::connect4, stone>(const stone &stone)
 {
         auto texture = sf::RenderTexture(cell_viewport_size, antialiasing);
         constexpr auto max_dimension

@@ -9,7 +9,7 @@ class game {
 public:
         enum class style {
                 tictactoe,
-                connect_four,
+                connect4,
                 go,
         };
 
