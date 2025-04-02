@@ -68,6 +68,21 @@ find_lines(const Grid &grid, const typename Grid::position &point)
                         co_yield line;
         }
 }
+
+template <grid_c Grid>
+std::vector<typename Grid::position>
+covered_cells(const Grid &grid, const line<typename Grid::position> &line)
+{
+
+        const auto &[x, y] = line.endpoints();
+        auto diff          = y - x;
+        auto dir           = diff / norm<metric::chebyshev>(diff);
+        auto covered       = std::vector<typename Grid::position>();
+        for (auto it = x; it != y + dir; it += dir)
+                covered.push_back(it);
+        return covered;
+}
+
 } // namespace mnkg
 
 template <mnkg::line_c Line, typename CharT>
