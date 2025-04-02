@@ -1,4 +1,5 @@
 #include "gui.hpp"
+#include "SFML/Window/ContextSettings.hpp"
 #include "varia/point.hpp"
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/CircleShape.hpp>
@@ -33,6 +34,10 @@ aspect_ratio(auto size)
 {
         return static_cast<float>(size.x) / size.y;
 }
+
+static const sf::ContextSettings antialiasing{
+        .antiAliasingLevel = sf::RenderTexture::getMaximumAntiAliasingLevel()
+};
 
 static constexpr sf::Vector2u cell_viewport_size = { 128u, 128u };
 
@@ -97,7 +102,7 @@ sf::Texture
 texture<style::tictactoe, board>(const board &board)
 {
 
-        auto texture = sf::RenderTexture(board.viewport_size());
+        auto texture = sf::RenderTexture(board.viewport_size(), antialiasing);
         texture.clear(sf::Color::White);
 
         sf::RectangleShape line;
@@ -125,7 +130,7 @@ sf::Texture
 texture<style::connect_four, board>(const board &board)
 {
 
-        auto texture = sf::RenderTexture(board.viewport_size());
+        auto texture = sf::RenderTexture(board.viewport_size(), antialiasing);
         texture.clear(color::pastel::blue);
         constexpr auto max_dimension
             = std::max(cell_viewport_size.x, cell_viewport_size.y);
@@ -148,7 +153,7 @@ template <>
 sf::Texture
 texture<style::go, board>(const board &board)
 {
-        auto texture = sf::RenderTexture(board.viewport_size());
+        auto texture = sf::RenderTexture(board.viewport_size(), antialiasing);
         texture.clear(color::wood);
         constexpr auto max_dimension
             = std::max(cell_viewport_size.x, cell_viewport_size.y);
@@ -178,7 +183,7 @@ template <>
 sf::Texture
 texture<style::connect_four, stone>(const stone &stone)
 {
-        auto           texture = sf::RenderTexture(cell_viewport_size);
+        auto texture = sf::RenderTexture(cell_viewport_size, antialiasing);
         constexpr auto max_dimension
             = std::max(cell_viewport_size.x, cell_viewport_size.y);
         constexpr auto  radius = max_dimension * stone::size_factor / 2;
@@ -210,7 +215,7 @@ template <>
 sf::Texture
 texture<style::go, stone>(const stone &stone)
 {
-        auto           texture = sf::RenderTexture(cell_viewport_size);
+        auto texture = sf::RenderTexture(cell_viewport_size, antialiasing);
         constexpr auto max_radius
             = std::max(cell_viewport_size.x, cell_viewport_size.y);
         constexpr auto  radius = max_radius * stone::size_factor / 2;
@@ -241,7 +246,7 @@ template <>
 sf::Texture
 texture<style::tictactoe, stone>(const stone &stone)
 {
-        sf::RenderTexture texture(cell_viewport_size);
+        sf::RenderTexture texture(cell_viewport_size, antialiasing);
 
         constexpr float max_dimension
             = std::max(cell_viewport_size.x, cell_viewport_size.y);
