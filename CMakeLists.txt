@@ -17,6 +17,8 @@ endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+find_package(OpenGL REQUIRED)
+
 include(FetchContent)
 
 add_definitions(-DASIO_STANDALONE)
@@ -29,6 +31,7 @@ FetchContent_MakeAvailable(asio)
 set(ASIO_INCLUDE_DIR "${CMAKE_BINARY_DIR}/_deps/asio-src/asio/include")
 include_directories(${ASIO_INCLUDE_DIR})
 
+set(BUILD_SHARED_LIBS ON)
 FetchContent_Declare(
     sfml
     GIT_REPOSITORY https://github.com/SFML/SFML.git
@@ -38,17 +41,47 @@ FetchContent_MakeAvailable(sfml)
 set(SFML_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/_deps/sfml-src/include)
 include_directories(${SFML_INCLUDE_DIRS})
 
+FetchContent_Declare(
+    imgui
+    GIT_REPOSITORY https://github.com/ocornut/imgui.git
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(imgui)
+set(IMGUI_DIR "${CMAKE_BINARY_DIR}/_deps/imgui-src")
+include_directories(${IMGUI_DIR})
+
+add_library(imgui STATIC 
+    ${IMGUI_DIR}/imgui.cpp
+    ${IMGUI_DIR}/imgui_draw.cpp
+    ${IMGUI_DIR}/imgui_widgets.cpp
+    ${IMGUI_DIR}/imgui_tables.cpp
+    ${IMGUI_DIR}/imgui_demo.cpp
+)
+
+FetchContent_Declare(
+    imgui-sfml
+    GIT_REPOSITORY https://github.com/eliasdaler/imgui-sfml.git
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(imgui-sfml)
+include_directories(${CMAKE_BINARY_DIR}/_deps/imgui-sfml-src)
+
+add_library(imgui-sfml STATIC 
+    ${CMAKE_BINARY_DIR}/_deps/imgui-sfml-src/imgui-SFML.cpp
+)
 include_directories(src/mnkg)
 
 file(GLOB_RECURSE SOURCES src/*.cpp)
 
 add_library(mnkg STATIC ${SOURCES})
 
+target_link_libraries(mnkg PRIVATE sfml-graphics imgui imgui-sfml OpenGL::GL)
+
 foreach(source_file ${SOURCES})
     file(READ ${source_file} CONTENTS)
     if (CONTENTS MATCHES "main\\s*\\(")
         get_filename_component(name ${source_file} NAME_WE)
         add_executable(${name} ${source_file})
-        target_link_libraries(${name} PRIVATE mnkg sfml-graphics)
+        target_link_libraries(${name} PRIVATE mnkg sfml-graphics imgui imgui-sfml)
     endif()
 endforeach()
