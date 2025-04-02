@@ -5,28 +5,29 @@
 
 namespace mnkg::view {
 
-enum class style {
-        tictactoe,
-        connect_four,
-        go,
-};
-
-struct callbacks {
-        std::function<void(point<int, 2>)> on_cell_selected;
-};
-
-struct settings {
-        std::string    title = "MNK Game";
-        style          style = style::tictactoe;
-        callbacks      callbacks;
-        point<uint, 2> board_size;
-};
-
-class gui {
+class game {
 public:
-        gui(const settings &settings);
+        enum class style {
+                tictactoe,
+                connect_four,
+                go,
+        };
 
-        ~gui();
+        struct callbacks {
+                std::function<void(point<int, 2>)> on_cell_selected;
+        };
+
+        struct settings {
+                std::string    title;
+                style          style;
+                callbacks      callbacks;
+                point<uint, 2> board_size;
+        };
+
+public:
+        game(const settings &settings);
+
+        ~game();
 
         void
         run(); // occupies calling thread to manage the window

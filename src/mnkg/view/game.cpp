@@ -1,5 +1,4 @@
-#include "gui.hpp"
-#include "SFML/Window/ContextSettings.hpp"
+#include "game.hpp"
 #include "varia/point.hpp"
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/CircleShape.hpp>
@@ -14,6 +13,7 @@
 #include <SFML/Graphics/View.hpp>
 #include <SFML/System/Angle.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <SFML/Window/ContextSettings.hpp>
 #include <SFML/Window/Mouse.hpp>
 #include <SFML/Window/VideoMode.hpp>
 #include <SFML/Window/WindowEnums.hpp>
@@ -75,7 +75,7 @@ struct stone {
         // Equal stones (same variant) look the same.
 };
 
-template <style Style, typename Renderable>
+template <game::style Style, typename Renderable>
 sf::Texture
 texture(const Renderable &)
 {
@@ -84,22 +84,23 @@ texture(const Renderable &)
 
 template <typename Renderable>
 sf::Texture
-texture(const Renderable &renderable, style style)
+texture(const Renderable &renderable, game::style style)
 {
+        using enum game::style;
         // HACK: Bad switch. Must be refactored later.
         switch (style) {
-        case style::tictactoe:
-                return texture<style::tictactoe>(renderable);
-        case style::connect_four:
-                return texture<style::connect_four>(renderable);
-        case style::go:
-                return texture<style::go>(renderable);
+        case tictactoe:
+                return texture<tictactoe>(renderable);
+        case connect_four:
+                return texture<connect_four>(renderable);
+        case go:
+                return texture<go>(renderable);
         }
 }
 
 template <>
 sf::Texture
-texture<style::tictactoe, board>(const board &board)
+texture<game::style::tictactoe, board>(const board &board)
 {
 
         auto texture = sf::RenderTexture(board.viewport_size(), antialiasing);
@@ -127,7 +128,7 @@ texture<style::tictactoe, board>(const board &board)
 
 template <>
 sf::Texture
-texture<style::connect_four, board>(const board &board)
+texture<game::style::connect_four, board>(const board &board)
 {
 
         auto texture = sf::RenderTexture(board.viewport_size(), antialiasing);
@@ -151,7 +152,7 @@ texture<style::connect_four, board>(const board &board)
 
 template <>
 sf::Texture
-texture<style::go, board>(const board &board)
+texture<game::style::go, board>(const board &board)
 {
         auto texture = sf::RenderTexture(board.viewport_size(), antialiasing);
         texture.clear(color::wood);
@@ -181,7 +182,7 @@ texture<style::go, board>(const board &board)
 
 template <>
 sf::Texture
-texture<style::connect_four, stone>(const stone &stone)
+texture<game::style::connect_four, stone>(const stone &stone)
 {
         auto texture = sf::RenderTexture(cell_viewport_size, antialiasing);
         constexpr auto max_dimension
@@ -213,7 +214,7 @@ texture<style::connect_four, stone>(const stone &stone)
 
 template <>
 sf::Texture
-texture<style::go, stone>(const stone &stone)
+texture<game::style::go, stone>(const stone &stone)
 {
         auto texture = sf::RenderTexture(cell_viewport_size, antialiasing);
         constexpr auto max_radius
@@ -244,7 +245,7 @@ texture<style::go, stone>(const stone &stone)
 
 template <>
 sf::Texture
-texture<style::tictactoe, stone>(const stone &stone)
+texture<game::style::tictactoe, stone>(const stone &stone)
 {
         sf::RenderTexture texture(cell_viewport_size, antialiasing);
 
@@ -292,7 +293,7 @@ texture<style::tictactoe, stone>(const stone &stone)
         return texture.getTexture();
 };
 
-class gui::implementation {
+class game::implementation {
 private:
         sf::RenderWindow            window_;
         callbacks                   callbacks_;
@@ -507,39 +508,39 @@ private:
         }
 };
 
-gui::gui(const settings &settings) :
+game::game(const settings &settings) :
         pimpl_(std::make_unique<implementation>(settings))
 {
 }
 
-gui::~gui() = default;
+game::~game() = default;
 
 void
-gui::run()
+game::run()
 {
         pimpl_->run();
 }
 
 void
-gui::set_selectable_cells(const std::vector<point<int, 2> > &coords)
+game::set_selectable_cells(const std::vector<point<int, 2> > &coords)
 {
         pimpl_->set_selectable_cells(coords);
 }
 
 void
-gui::set_stone_skin(uint index)
+game::set_stone_skin(uint index)
 {
         pimpl_->set_stone_skin(index);
 }
 
 void
-gui::draw_stone(point<int, 2> cell_coords)
+game::draw_stone(point<int, 2> cell_coords)
 {
         pimpl_->draw_stone(cell_coords);
 }
 
 void
-gui::highlight_stone(point<int, 2> cell_coords)
+game::highlight_stone(point<int, 2> cell_coords)
 {
         pimpl_->highlight_stone(cell_coords);
 }
