@@ -1,5 +1,4 @@
 #include "gui.hpp"
-#include "SFML/Window/WindowEnums.hpp"
 #include "varia/point.hpp"
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/CircleShape.hpp>
@@ -16,10 +15,24 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Mouse.hpp>
 #include <SFML/Window/VideoMode.hpp>
-#include <print>
-#include <utility>
+#include <SFML/Window/WindowEnums.hpp>
 
 namespace mnkg::view {
+
+namespace color {
+static const auto wood = sf::Color(222, 184, 135);
+namespace pastel {
+static const auto red    = sf::Color(255, 46, 46);
+static const auto blue   = sf::Color(27, 33, 120);
+static const auto yellow = sf::Color(254, 188, 46);
+} // namespace pastel
+}; // namespace color
+
+float
+aspect_ratio(auto size)
+{
+        return static_cast<float>(size.x) / size.y;
+}
 
 static constexpr sf::Vector2u cell_viewport_size = { 128u, 128u };
 
@@ -49,12 +62,6 @@ struct board {
                                  point<int, 2>{ point(cell_viewport_size) });
         }
 };
-
-float
-aspect_ratio(auto size)
-{
-        return static_cast<float>(size.x) / size.y;
-}
 
 struct stone {
         constexpr static float size_factor = 0.8; // relative to cell
@@ -119,7 +126,7 @@ texture<style::connect_four, board>(const board &board)
 {
 
         auto texture = sf::RenderTexture(board.viewport_size());
-        texture.clear(sf::Color::Blue);
+        texture.clear(color::pastel::blue);
         constexpr auto max_dimension
             = std::max(cell_viewport_size.x, cell_viewport_size.y);
         constexpr auto  radius = max_dimension * stone::size_factor / 2;
@@ -141,9 +148,8 @@ template <>
 sf::Texture
 texture<style::go, board>(const board &board)
 {
-        auto      texture    = sf::RenderTexture(board.viewport_size());
-        sf::Color wood_color = { 222, 184, 135 };
-        texture.clear(wood_color);
+        auto texture = sf::RenderTexture(board.viewport_size());
+        texture.clear(color::wood);
         constexpr auto max_dimension
             = std::max(cell_viewport_size.x, cell_viewport_size.y);
         sf::RectangleShape line;
@@ -182,15 +188,18 @@ texture<style::connect_four, stone>(const stone &stone)
         shape.setPosition(center);
         switch (stone.variant) {
         case 0:
-                shape.setFillColor(sf::Color::Red);
+                shape.setFillColor(color::pastel::red);
                 break;
         case 1:
-                shape.setFillColor(sf::Color::Yellow);
+                shape.setFillColor(color::pastel::yellow);
                 break;
         default:
                 assert(!"unrecognized stone variant");
                 std::unreachable(); // test the code!
         }
+        shape.setOutlineThickness(-radius * 0.1f);
+        auto outline_color = shape.getFillColor() * sf::Color(180, 180, 180);
+        shape.setOutlineColor(outline_color);
         texture.clear(sf::Color::Transparent);
         texture.draw(shape);
         texture.display();
@@ -212,6 +221,8 @@ texture<style::go, stone>(const stone &stone)
         switch (stone.variant) {
         case 0:
                 shape.setFillColor(sf::Color::White);
+                shape.setOutlineThickness(-radius / 10);
+                shape.setOutlineColor(sf::Color::Black);
                 break;
         case 1:
                 shape.setFillColor(sf::Color::Black);
@@ -244,7 +255,7 @@ texture<style::tictactoe, stone>(const stone &stone)
                 float              line_length = max_dimension * 0.8f;
                 auto size  = sf::Vector2f(line_length, line_thickness);
                 auto angle = sf::degrees(45.0f);
-                auto color = sf::Color::Red;
+                auto color = color::pastel::red;
 
                 line.setSize(size);
                 line.setOrigin(size / 2.f);
@@ -263,7 +274,7 @@ texture<style::tictactoe, stone>(const stone &stone)
                 shape.setOrigin({ radius, radius }); // center
                 shape.setPosition(center);
                 shape.setFillColor(sf::Color::Transparent);
-                shape.setOutlineColor(sf::Color::Blue);
+                shape.setOutlineColor(color::pastel::blue);
                 shape.setOutlineThickness(-line_thickness);
                 texture.draw(shape);
 
