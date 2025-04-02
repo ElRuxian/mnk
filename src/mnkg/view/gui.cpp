@@ -357,6 +357,23 @@ public:
                 redraw_window_();
         }
 
+        void
+        highlight_stone(unsigned int texture_index, point<int, 2> cell_coords)
+        {
+                assert(texture_index < textures_.stone.size());
+                sf::Sprite sprite(textures_.stone[texture_index]);
+                sprite.setPosition(board_.map_grid_to_view(cell_coords));
+                sprite.setColor(sf::Color(50, 255, 50, 255));
+                renders_.game.draw(sprite);
+        }
+
+        void
+        highlight_stone(point<int, 2> cell_coords)
+        {
+                highlight_stone(stone_skin_index_, cell_coords);
+                redraw_window_();
+        }
+
         inline void
         set_selectable_cells(std::vector<point<int, 2> > cells)
         {
@@ -519,6 +536,12 @@ void
 gui::draw_stone(point<int, 2> cell_coords)
 {
         pimpl_->draw_stone(cell_coords);
+}
+
+void
+gui::highlight_stone(point<int, 2> cell_coords)
+{
+        pimpl_->highlight_stone(cell_coords);
 }
 
 } // namespace mnkg::view

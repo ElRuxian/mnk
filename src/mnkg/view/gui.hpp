@@ -40,6 +40,9 @@ public:
         void
         draw_stone(point<int, 2> cell_coords);
 
+        void
+        highlight_stone(point<int, 2> cell_coords);
+
 private:
         class implementation;
         std::unique_ptr<implementation> pimpl_;
