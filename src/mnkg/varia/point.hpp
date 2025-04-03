@@ -51,7 +51,8 @@ public:
         // clang-format on
 
         template <typename Range>
-        explicit point(Range &&range)
+        explicit constexpr
+        point(Range &&range)
         {
                 assert(std::size(range) == Dimension);
                 std::ranges::copy(range, components_.begin());
@@ -256,6 +257,24 @@ auto
 transform(auto transformation, const Point &lhs, const Point &rhs)
 {
         return Point(std::views::zip_transform(transformation, lhs, rhs));
+}
+
+template <typename Component, size_t Dimension, typename... Args>
+constexpr point<Component, Dimension>
+          make_point(Args &&...components)
+{
+        return point<Component, Dimension>{ static_cast<Component>(
+            components)... };
+}
+
+template <typename Component, size_t Dimension>
+constexpr point<Component, Dimension>
+          make_point(auto value)
+{
+        // HACK: An array is used. Should be optimized away
+        std::array<Component, Dimension> components;
+        components.fill(static_cast<Component>(value));
+        return point<Component, Dimension>{ components };
 }
 
 } // namespace mnkg
