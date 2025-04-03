@@ -17,6 +17,11 @@
 
 #include "range_formatter.hpp"
 
+// HACK: this includes do not belong here
+// FIXME: they shouldn't be needed
+#include <SFML/Graphics.hpp>
+#include <imgui.h>
+
 namespace mnkg {
 
 template <typename Component, size_t Dimension> // clang-format off
@@ -137,8 +142,8 @@ public:
                 return point<T, Dimension>((components_));
         }
 
-// SFML (Simple and Fast Multimedia Library) integration
 #ifdef SFML_GRAPHICS_API
+
         point(const sf::Vector2<Component> &vector) :
                 components_{ vector.x, vector.y }
         {
@@ -148,13 +153,25 @@ public:
         {
                 return { components_[0], components_[1] };
         }
+
+#endif
+
+#ifdef IMGUI_VERSION
+
+        point(const ImVec2 &vector) : components_{ vector.x, vector.y } {}
+
+        operator ImVec2() const { return { components_[0], components_[1] }; }
+
+#endif
 };
 
+#ifdef SFML_GRAPHICS_API
 template <typename Component>
 point(const sf::Vector2<Component> &) -> point<Component, 2>;
+#endif
 
-#else
-};
+#ifdef IMGUI_VERSION
+point(const ImVec2 &) -> point<float, 2>;
 #endif
 
 template <typename T, class T_ = std::remove_cvref_t<T> >
