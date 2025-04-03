@@ -1,6 +1,7 @@
 #include "control/game.hpp"
 #include "model/mnk/game.hpp"
 #include "model/mnk/play_filter.hpp"
+#include "varia/point.hpp"
 
 #include <SFML/Graphics.hpp>
 #include <array>
@@ -12,6 +13,60 @@
 //        - decouple config menu from control::game?
 
 namespace mnkg::control {
+
+namespace widgets {
+
+void
+board_size_selector(std::string name, point<int, 2> *output,
+                    point<int, 2> max_selectable,
+                    point<int, 2> initial_selection = { 3, 3 },
+                    int square_size = 20, int padding = 4)
+{
+        assert(output);
+
+        auto selector_size
+            = point<float, 2>(max_selectable) * (square_size + padding);
+        selector_size += make_point<float, 2>(padding);
+
+        point<float, 2> origin = ImGui::GetCursorPos();
+
+        ImGui::BeginChild(
+            name.c_str(), selector_size, true, ImGuiWindowFlags_NoScrollbar);
+
+        ImGui::InvisibleButton("##", selector_size);
+        if (ImGui::IsItemActive()) {
+                point<float, 2> mouse_position = ImGui::GetIO().MousePos;
+                mouse_position -= origin + make_point<float, 2>(padding);
+                auto stride = square_size + padding;
+                *output     = point<int, 2>(mouse_position / stride);
+                *output += { 1, 1 }; // coord (0, 0) selects size (1, 1)
+                for (auto i = 0; i < 2; ++i)
+                        (*output)[i]
+                            = std::clamp((*output)[i], 0, max_selectable[i]);
+        }
+
+        auto *draw_list = ImGui::GetWindowDrawList();
+
+        for (float y = 0; y < max_selectable[1]; ++y) {
+                for (float x = 0; x < max_selectable[0]; ++x) {
+                        auto position = point{ x, y };
+                        position *= static_cast<float>(square_size + padding);
+                        position += origin + make_point<float, 2>(padding);
+                        auto size = make_point<float, 2>(square_size);
+                        bool higlighted
+                            = (x < (*output)[0] && y < (*output)[1]);
+                        ImU32 color = higlighted ? IM_COL32(100, 200, 100, 255)
+                                                 : IM_COL32(200, 200, 200, 255);
+                        draw_list->AddRectFilled(
+                            position, position + size, color);
+                        draw_list->AddRect(
+                            position, position + size, IM_COL32(0, 0, 0, 255));
+                }
+        }
+
+        ImGui::EndChild();
+}
+} // namespace widgets
 
 class configuation_menu {
 
@@ -51,10 +106,11 @@ public:
                 });
 
                 struct game_configuration {
-                        int  board_width, board_height;
-                        int  line_length;
-                        bool allow_overline;
-                        bool gravity;
+                        point<int, 2>     board_size;
+                        int               line_length;
+                        bool              allow_overline;
+                        bool              gravity;
+                        view::game::style style;
                 } game;
 
                 std::array<control::player, 2> players;
@@ -66,14 +122,12 @@ public:
 
                 auto preset_options = std::to_array<preset>({
                     { "Tic-Tac-Toe",
-                      { .board_width    = 3,
-                        .board_height   = 3,
+                      { .board_size     = { 3, 3 },
                         .line_length    = 3,
                         .allow_overline = false,
                         .gravity        = false } },
                     { "Connect-4",
-                      { .board_width    = 7,
-                        .board_height   = 6,
+                      { .board_size     = { 7, 6 },
                         .line_length    = 4,
                         .allow_overline = true,
                         .gravity        = true } },
@@ -101,31 +155,15 @@ public:
                                      ImGuiWindowFlags_NoTitleBar
                                          | ImGuiWindowFlags_NoResize
                                          | ImGuiWindowFlags_NoMove);
-                        // float window_width   = window_.getSize().x;
-                        // float window_height  = window_.getSize().y;
-                        // float content_width  = 300.0f;
-                        // float content_height = 200.0f;
-                        // ImGui::SetCursorPos(
-                        //     ImVec2((window_width - content_width) / 2,
-                        //            (window_height - content_height) / 2));
 
-                        ImGui::Text("Board size:");
-                        ImGui::PushItemWidth(100);
+                        widgets::board_size_selector("Board size",
+                                                     &game.board_size,
+                                                     { 10, 10 },
+                                                     game.board_size);
+                        ImGui::Text("Line length:");
                         ImGui::SameLine();
-                        if (ImGui::InputInt(
-                                "##board_width", &game.board_width, 1, 10))
-                                game.board_width
-                                    = std::clamp(game.board_width, 1, 10);
-                        ImGui::SameLine();
-                        ImGui::Text(":");
-                        ImGui::SameLine();
-                        if (ImGui::InputInt(
-                                "##board_height", &game.board_height, 1, 10))
-                                game.board_height
-                                    = std::clamp(game.board_height, 1, 10);
-
-                        ImGui::Text("Line length");
-                        ImGui::SameLine();
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::SetNextItemWidth(100);
                         if (ImGui::InputInt(
                                 "##line_length", &game.line_length, 1, 10))
                                 game.line_length
@@ -150,8 +188,7 @@ public:
 
                         if (ImGui::Button("Start game")) {
                                 control::game::settings settings;
-                                settings.game.board.size
-                                    = { game.board_width, game.board_height };
+                                settings.game.board.size = game.board_size;
                                 settings.game.rules
                                     = { .line_span
                                         = static_cast<uint>(game.line_length),
@@ -180,5 +217,4 @@ public:
                 return {};
         }
 };
-
 } // namespace mnkg::control
