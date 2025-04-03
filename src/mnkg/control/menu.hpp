@@ -8,19 +8,18 @@
 #include <imgui-SFML.h>
 #include <imgui.h>
 
-// TODO: improve architecture:
-//        - move ImGUI code to a separate view module?
-//        - decouple config menu from control::game?
+// TODO: refactor to improve architecture:
+//        - definetly most of this code should be in the view module
+//        - decouple the config menu from control::game
 
 namespace mnkg::control {
 
 namespace widgets {
-
 void
 board_size_selector(std::string name, point<int, 2> *output,
                     point<int, 2> max_selectable,
                     point<int, 2> initial_selection = { 3, 3 },
-                    int square_size = 20, int padding = 4)
+                    int square_size = 15, int padding = 2)
 {
         assert(output);
 
@@ -84,8 +83,7 @@ private:
 
 public:
         configuation_menu() :
-                window_(sf::VideoMode({ 800, 600 }), "MNKG Menu",
-                        sf::Style::Close)
+                window_(sf::VideoMode({ 450, 450 }), "MNKG", sf::Style::Close)
         {
                 if (!ImGui::SFML::Init(window_))
                         throw std::runtime_error(
@@ -120,6 +118,10 @@ public:
                         game_configuration config;
                 };
 
+                constexpr auto max_line_lenght = 10;
+                constexpr auto max_board_size
+                    = make_point<int, 2>(max_line_lenght);
+
                 auto preset_options = std::to_array<preset>({
                     { "Tic-Tac-Toe",
                       { .board_size     = { 3, 3 },
@@ -136,6 +138,8 @@ public:
                 game    = preset_options[0].config;
                 players = { control::player::human, control::player::ai };
 
+                uint frame = 0;
+
                 sf::Clock clock;
                 while (window_.isOpen()) {
 
@@ -147,33 +151,43 @@ public:
 
                         ImGui::SFML::Update(window_, clock.restart());
 
+                        ImGui::SetNextWindowSizeConstraints(
+                            ImVec2(0, 0), ImVec2(FLT_MAX, FLT_MAX));
+
+                        auto flags = ImGuiWindowFlags_NoTitleBar
+                                     | ImGuiWindowFlags_NoMove
+                                     | ImGuiWindowFlags_NoScrollbar
+                                     | ImGuiWindowFlags_NoResize;
+
+                        // Only auto-resize the first time.
+                        // Otherwise, it clips the window. IDK why.
+                        if (frame == 0)
+                                flags |= ImGuiWindowFlags_AlwaysAutoResize;
+
                         ImGui::SetNextWindowPos(ImVec2(0, 0));
-                        ImGui::SetNextWindowSize(
-                            ImVec2(window_.getSize().x, window_.getSize().y));
-                        ImGui::Begin("MNKG Menu",
-                                     nullptr,
-                                     ImGuiWindowFlags_NoTitleBar
-                                         | ImGuiWindowFlags_NoResize
-                                         | ImGuiWindowFlags_NoMove);
+                        ImGui::Begin("MNKG Menu", nullptr, flags);
 
                         widgets::board_size_selector("Board size",
                                                      &game.board_size,
-                                                     { 10, 10 },
+                                                     max_board_size,
                                                      game.board_size);
+                        ImGui::AlignTextToFramePadding();
                         ImGui::Text("Line length:");
                         ImGui::SameLine();
                         ImGui::AlignTextToFramePadding();
-                        ImGui::SetNextItemWidth(100);
-                        if (ImGui::InputInt(
-                                "##line_length", &game.line_length, 1, 10))
-                                game.line_length
-                                    = std::clamp(game.line_length, 1, 10);
+                        ImGui::SetNextItemWidth(-FLT_MIN);
+                        if (ImGui::InputInt("##line_length",
+                                            &game.line_length,
+                                            1,
+                                            max_line_lenght))
+                                game.line_length = std::clamp(
+                                    game.line_length, 1, max_line_lenght);
 
                         ImGui::Checkbox("Allow overline", &game.allow_overline);
 
                         ImGui::Checkbox("Gravity", &game.gravity);
 
-                        if (ImGui::Button("Preset.."))
+                        if (ImGui::Button("Preset..", { -FLT_MIN, 0 }))
                                 ImGui::OpenPopup("preset_popup");
                         if (ImGui::BeginPopup("preset_popup")) {
                                 for (const auto &preset : preset_options) {
@@ -184,9 +198,9 @@ public:
                                 ImGui::EndPopup();
                         }
 
-                        ImGui::SameLine();
+                        ImGui::Separator();
 
-                        if (ImGui::Button("Start game")) {
+                        if (ImGui::Button("Start game", { -FLT_MIN, 0 })) {
                                 control::game::settings settings;
                                 settings.game.board.size = game.board_size;
                                 settings.game.rules
@@ -202,17 +216,28 @@ public:
                                 settings.style   = view::game::style::go;
                                 settings.players = players;
                                 settings.title   = "MNKG Game";
+                                window_.close();
                                 ImGui::SFML::Shutdown();
                                 return settings;
                         };
 
+                        auto window_size = ImGui::GetWindowSize();
+
                         ImGui::End();
 
-                        window_.clear(sf::Color(50, 50, 50));
+                        // Let ImGUI render one frame to compute window size.
+                        // Then, resize the SFML window to perfectly fit it.
+                        if (frame == 1)
+                                window_.setSize(sf::Vector2u(
+                                    static_cast<unsigned>(window_size.x),
+                                    static_cast<unsigned>(window_size.y)));
+
+                        window_.clear(sf::Color::Black);
                         ImGui::SFML::Render(window_);
                         window_.display();
+                        frame++;
                 }
-
+                window_.close();
                 ImGui::SFML::Shutdown();
                 return {};
         }
