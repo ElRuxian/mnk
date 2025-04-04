@@ -253,7 +253,7 @@ template <typename... Args>
 point(Args...) -> point<std::common_type_t<Args...>, sizeof...(Args)>;
 
 template <point_c Point>
-auto
+constexpr auto
 transform(auto transformation, const Point &lhs, const Point &rhs)
 {
         return Point(std::views::zip_transform(transformation, lhs, rhs));
