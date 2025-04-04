@@ -154,22 +154,21 @@ texture<game::style::go, board>(const board &board)
             = std::max(cell_viewport_size.x, cell_viewport_size.y);
         sf::RectangleShape line;
         line.setFillColor(sf::Color::Black);
-        constexpr float line_thickness = max_dimension * 0.1f;
-        auto            grid_size      = texture.getSize() - cell_viewport_size;
+        constexpr auto line_thickness = max_dimension * 0.1f;
+        auto           line_length    = texture.getSize() - cell_viewport_size;
+        line_length += { (uint)(line_thickness), (uint)(line_thickness) };
+        auto offset = sf::Vector2f(cell_viewport_size) / 2.f;
+        line.setOrigin({ line_thickness / 2, line_thickness / 2 });
         for (uint x = 0; x < board.grid_size[0]; ++x) {
-                line.setSize(
-                    sf::Vector2f(line_thickness, grid_size.y + line_thickness));
-                auto position = sf::Vector2f(x * cell_viewport_size.x, 0);
-                position += sf::Vector2f(cell_viewport_size) / 2.f;
-                line.setPosition(position);
+                line.setSize(sf::Vector2f(line_thickness, line_length.y));
+                line.setPosition(sf::Vector2f(x * cell_viewport_size.x, 0)
+                                 + offset);
                 texture.draw(line);
         }
         for (uint y = 0; y < board.grid_size[1]; ++y) {
-                line.setSize(
-                    sf::Vector2f(grid_size.x + line_thickness, line_thickness));
-                auto position = sf::Vector2f(0, y * cell_viewport_size.y);
-                position += sf::Vector2f(cell_viewport_size) / 2.f;
-                line.setPosition(position);
+                line.setSize(sf::Vector2f(line_length.x, line_thickness));
+                line.setPosition(sf::Vector2f(0, y * cell_viewport_size.y)
+                                 + offset);
                 texture.draw(line);
         }
         texture.display();
