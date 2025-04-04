@@ -29,12 +29,6 @@ static const auto yellow = sf::Color(254, 188, 46);
 } // namespace pastel
 }; // namespace color
 
-float
-aspect_ratio(auto size)
-{
-        return static_cast<float>(size.x) / size.y;
-}
-
 static const sf::ContextSettings antialiasing{
         .antiAliasingLevel = sf::RenderTexture::getMaximumAntiAliasingLevel()
 };
@@ -315,11 +309,14 @@ public:
         implementation(const struct settings &settings) :
                 callbacks_(settings.callbacks), board_{ settings.board_size }
         {
-                const auto &desktop_mode = sf::VideoMode::getDesktopMode();
-                auto        board_size   = board_.viewport_size();
-                auto        screen_size  = sf::Vector2f{ desktop_mode.size };
-                auto        window_size  = sf::Vector2u{ screen_size * 0.75f };
-                window_size.x = window_size.y * aspect_ratio(board_size);
+                const auto  &desktop_mode = sf::VideoMode::getDesktopMode();
+                auto         board_size   = board_.viewport_size();
+                auto         screen_size  = sf::Vector2f{ desktop_mode.size };
+                sf::Vector2f ratio        = { screen_size.x / board_size.x,
+                                              screen_size.y / board_size.y };
+                auto         scale        = std::min(ratio.x, ratio.y) * 0.6f;
+                auto         window_size
+                    = sf::Vector2u{ sf::Vector2f(board_size) * scale };
 
                 window_.create(sf::VideoMode(window_size),
                                settings.title,
@@ -366,7 +363,7 @@ public:
                 assert(texture_index < textures_.stone.size());
                 sf::Sprite sprite(textures_.stone[texture_index]);
                 sprite.setPosition(board_.map_grid_to_view(cell_coords));
-                sprite.setColor(sf::Color(50, 255, 50, 255));
+                sprite.setColor(sf::Color(50, 255, 50));
                 renders_.game.draw(sprite);
         }
 
