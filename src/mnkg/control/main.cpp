@@ -4,8 +4,10 @@
 int
 main()
 {
-        mnkg::control::configuation_menu menu;
-        mnkg::control::game::settings    settings = *menu.run();
-        mnkg::control::game              game(std::move(settings));
+        auto menu     = mnkg::control::configuation_menu{};
+        auto settings = menu.run();
+        if (!settings)
+                return 0;
+        auto game = mnkg::control::game(std::move(*settings));
         game.run();
 };
