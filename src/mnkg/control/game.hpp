@@ -27,13 +27,19 @@ public:
                                           } },
                        .board_size
                        = point<unsigned int, 2>(model_.board().get_size()) }),
-                mcts_(
-                    std::ranges::contains(settings.players, player::ai)
-                        ? (std::make_unique<model::mcts::ai<decltype(model_)> >(
-                              model_))
-                        : nullptr),
                 players_(std::move(settings.players))
         {
+                using std::ranges::contains;
+                bool run_mcts = contains(settings.players, player::ai);
+                if (run_mcts) {
+                        using mcts       = model::mcts::ai<decltype(model_)>;
+                        auto concurrency = std::thread::hardware_concurrency();
+                        auto hparams     = mcts::hyperparameters{
+                                    .leaf_parallelization = concurrency,
+                        };
+                        mcts_ = std::make_unique<mcts>(model_, hparams);
+                }
+
                 on_new_turn_();
         }
 
