@@ -101,16 +101,19 @@ texture<game::style::tictactoe, board>(const board &board)
         texture.clear(sf::Color::White);
 
         sf::RectangleShape line;
-        constexpr auto     line_thickness = 2; // arbitrary; looks ok
+        constexpr auto     line_thickness = cell_viewport_size.x * 0.025f;
+        line.setOrigin({ line_thickness / 2, line_thickness / 2 });
         line.setFillColor(sf::Color::Black);
 
-        line.setSize(sf::Vector2f(line_thickness, texture.getSize().y));
+        line.setSize(sf::Vector2f(line_thickness,
+                                  texture.getSize().y + line_thickness / 2));
         for (uint i = 1; i < board.grid_size[0]; ++i) {
                 line.setPosition(sf::Vector2f(i * cell_viewport_size.y, 0));
                 texture.draw(line);
         }
 
-        line.setSize(sf::Vector2f(texture.getSize().x, line_thickness));
+        line.setSize(sf::Vector2f(texture.getSize().x + line_thickness / 2,
+                                  line_thickness));
         for (uint i = 1; i < board.grid_size[1]; ++i) {
                 line.setPosition(sf::Vector2f(0, i * cell_viewport_size.y));
                 texture.draw(line);
