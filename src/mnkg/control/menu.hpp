@@ -8,9 +8,11 @@
 #include <imgui-SFML.h>
 #include <imgui.h>
 
-// TODO: refactor to improve architecture:
-//        - definetly most of this code should be in the view module
-//        - decouple the config menu from control::game
+// TODO:
+// - Refactor to improve architecture:
+//        - definetly most of this code should be in the view module;
+//        - decouple the config menu from control::game.
+// - Clean up the code in general, as it was rushed.
 
 namespace mnkg::control {
 
@@ -103,12 +105,25 @@ public:
                     { .type = control::player::ai, .name = "AI" },
                 });
 
+                struct style {
+                        std::string       name;
+                        view::game::style value;
+                };
+
+                auto style_options = std::to_array<style>({
+                    { .name  = "Tic-Tac-Toe",
+                      .value = view::game::style::tictactoe },
+                    { .name  = "Connect-4",
+                      .value = view::game::style::connect4 },
+                    { .name = "Go", .value = view::game::style::go },
+                });
+
                 struct game_configuration {
-                        point<int, 2>     board_size;
-                        int               line_length;
-                        bool              allow_overline;
-                        bool              gravity;
-                        view::game::style style;
+                        point<int, 2> board_size;
+                        int           line_length;
+                        bool          allow_overline;
+                        bool          gravity;
+                        style         style;
                 } game;
 
                 std::array<control::player, 2> players;
@@ -127,12 +142,14 @@ public:
                       { .board_size     = { 3, 3 },
                         .line_length    = 3,
                         .allow_overline = false,
-                        .gravity        = false } },
+                        .gravity        = false,
+                        .style          = style_options[0] } },
                     { "Connect-4",
                       { .board_size     = { 7, 6 },
                         .line_length    = 4,
                         .allow_overline = true,
-                        .gravity        = true } },
+                        .gravity        = true,
+                        .style          = style_options[1] } },
                 });
 
                 game    = preset_options[0].config;
@@ -182,6 +199,20 @@ public:
                                             max_line_lenght))
                                 game.line_length = std::clamp(
                                     game.line_length, 1, max_line_lenght);
+
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::Text("Style:");
+                        ImGui::SameLine();
+                        ImGui::SetNextItemWidth(-FLT_MIN);
+                        if (ImGui::BeginCombo("##style",
+                                              game.style.name.c_str())) {
+                                for (const auto &option : style_options) {
+                                        if (ImGui::Selectable(
+                                                option.name.c_str()))
+                                                game.style = option;
+                                }
+                                ImGui::EndCombo();
+                        }
 
                         ImGui::Checkbox("Allow overline", &game.allow_overline);
 
@@ -240,7 +271,7 @@ public:
                                                     model::mnk::play_filter::
                                                         gravity>()
                                               : nullptr };
-                                settings.style   = view::game::style::go;
+                                settings.style   = game.style.value;
                                 settings.players = players;
                                 settings.title   = "MNKG Game";
                                 window_.close();
