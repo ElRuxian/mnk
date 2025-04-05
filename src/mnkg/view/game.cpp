@@ -36,7 +36,7 @@ static const sf::ContextSettings antialiasing{
 static constexpr sf::Vector2u cell_viewport_size = { 128u, 128u };
 
 struct board {
-        const point<uint, 2> grid_size;
+        const point<unsigned int, 2> grid_size;
 
         constexpr sf::Vector2u
                   viewport_size() const
@@ -63,9 +63,9 @@ struct board {
 };
 
 struct stone {
-        constexpr static float size_factor = 0.8; // relative to cell
-        uint                   variant;           // simple index
-        static constexpr uint  variant_count = 2;
+        constexpr static float        size_factor = 0.8; // relative to cell
+        unsigned int                  variant;           // simple index
+        static constexpr unsigned int variant_count = 2;
         // Equal stones (same variant) look the same.
 };
 
@@ -107,14 +107,14 @@ texture<game::style::tictactoe, board>(const board &board)
 
         line.setSize(sf::Vector2f(line_thickness,
                                   texture.getSize().y + line_thickness / 2));
-        for (uint i = 1; i < board.grid_size[0]; ++i) {
+        for (unsigned int i = 1; i < board.grid_size[0]; ++i) {
                 line.setPosition(sf::Vector2f(i * cell_viewport_size.y, 0));
                 texture.draw(line);
         }
 
         line.setSize(sf::Vector2f(texture.getSize().x + line_thickness / 2,
                                   line_thickness));
-        for (uint i = 1; i < board.grid_size[1]; ++i) {
+        for (unsigned int i = 1; i < board.grid_size[1]; ++i) {
                 line.setPosition(sf::Vector2f(0, i * cell_viewport_size.y));
                 texture.draw(line);
         }
@@ -159,16 +159,17 @@ texture<game::style::go, board>(const board &board)
         line.setFillColor(sf::Color::Black);
         constexpr auto line_thickness = max_dimension * 0.1f;
         auto           line_length    = texture.getSize() - cell_viewport_size;
-        line_length += { (uint)(line_thickness), (uint)(line_thickness) };
+        line_length += { (unsigned int)(line_thickness),
+                         (unsigned int)(line_thickness) };
         auto offset = sf::Vector2f(cell_viewport_size) / 2.f;
         line.setOrigin({ line_thickness / 2, line_thickness / 2 });
-        for (uint x = 0; x < board.grid_size[0]; ++x) {
+        for (unsigned int x = 0; x < board.grid_size[0]; ++x) {
                 line.setSize(sf::Vector2f(line_thickness, line_length.y));
                 line.setPosition(sf::Vector2f(x * cell_viewport_size.x, 0)
                                  + offset);
                 texture.draw(line);
         }
-        for (uint y = 0; y < board.grid_size[1]; ++y) {
+        for (unsigned int y = 0; y < board.grid_size[1]; ++y) {
                 line.setSize(sf::Vector2f(line_length.x, line_thickness));
                 line.setPosition(sf::Vector2f(0, y * cell_viewport_size.y)
                                  + offset);
@@ -298,7 +299,7 @@ private:
         board                       board_;
         point<int, 2>               hovered_cell_;
         std::vector<point<int, 2> > selectable_cells_;
-        uint                        stone_skin_index_;
+        unsigned int                stone_skin_index_;
         struct textures {
                 sf::Texture                                   board;
                 std::array<sf::Texture, stone::variant_count> stone;
@@ -329,7 +330,7 @@ public:
                              sf::RenderTexture(board_size) };
 
                 textures_.board = texture(board_, settings.style);
-                for (uint i = 0; i < stone::variant_count; ++i)
+                for (unsigned int i = 0; i < stone::variant_count; ++i)
                         textures_.stone[i] = texture(stone(i), settings.style);
                 assert(valid_(textures_));
 
@@ -400,7 +401,7 @@ void main()
         }
 
         inline void
-        set_stone_skin(uint index)
+        set_stone_skin(unsigned int index)
         {
                 stone_skin_index_ = index;
         }
@@ -546,7 +547,7 @@ game::set_selectable_cells(const std::vector<point<int, 2> > &coords)
 }
 
 void
-game::set_stone_skin(uint index)
+game::set_stone_skin(unsigned int index)
 {
         pimpl_->set_stone_skin(index);
 }

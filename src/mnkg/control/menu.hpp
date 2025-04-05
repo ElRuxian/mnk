@@ -155,7 +155,7 @@ public:
                 game    = preset_options[0].config;
                 players = { control::player::human, control::player::ai };
 
-                uint frame = 0;
+                unsigned int frame = 0;
 
                 sf::Clock clock;
                 while (window_.isOpen()) {
@@ -262,8 +262,8 @@ public:
                                 control::game::settings settings;
                                 settings.game.board.size = game.board_size;
                                 settings.game.rules
-                                    = { .line_span
-                                        = static_cast<uint>(game.line_length),
+                                    = { .line_span = static_cast<unsigned int>(
+                                            game.line_length),
                                         .overline = game.allow_overline,
                                         .play_filter
                                         = game.gravity

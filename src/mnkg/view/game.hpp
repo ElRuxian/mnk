@@ -18,10 +18,10 @@ public:
         };
 
         struct settings {
-                std::string    title;
-                style          style;
-                callbacks      callbacks;
-                point<uint, 2> board_size;
+                std::string            title;
+                style                  style;
+                callbacks              callbacks;
+                point<unsigned int, 2> board_size;
         };
 
 public:
@@ -36,7 +36,7 @@ public:
         set_selectable_cells(const std::vector<point<int, 2> > &coords);
 
         void
-        set_stone_skin(uint index);
+        set_stone_skin(unsigned int index);
 
         void
         draw_stone(point<int, 2> cell_coords);

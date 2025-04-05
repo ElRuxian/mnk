@@ -27,7 +27,7 @@ public:
                                                   on_cell_selected_(coords);
                                           } },
                        .board_size
-                       = point<uint, 2>(model_.board().get_size()) }),
+                       = point<unsigned int, 2>(model_.board().get_size()) }),
                 mcts_(
                     std::ranges::contains(settings.players, player::ai)
                         ? (std::make_unique<model::mcts::ai<decltype(model_)> >(
