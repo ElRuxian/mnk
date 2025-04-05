@@ -200,6 +200,33 @@ public:
 
                         ImGui::Separator();
 
+                        auto player_selector = [&](control::player *player) {
+                                ImGui::BeginGroup();
+                                auto id = reinterpret_cast<uintptr_t>(player);
+                                for (const auto &option : player_options) {
+                                        if (ImGui::RadioButton(
+                                                std::format(
+                                                    "{}##{}", option.name, id)
+                                                    .c_str(),
+                                                *player == option.type)) {
+                                                *player = option.type;
+                                        }
+                                }
+                                ImGui::EndGroup();
+                        };
+
+                        ImGui::SameLine();
+                        player_selector(&players[0]);
+                        ImGui::SameLine();
+                        ImGui::BeginGroup();
+                        ImGui::Dummy({ 0, 10 });
+                        ImGui::Text("VS");
+                        ImGui::EndGroup();
+                        ImGui::SameLine();
+                        player_selector(&players[1]);
+
+                        ImGui::Separator();
+
                         if (ImGui::Button("Start game", { -FLT_MIN, 0 })) {
                                 control::game::settings settings;
                                 settings.game.board.size = game.board_size;
