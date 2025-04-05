@@ -73,7 +73,8 @@ template <game::style Style, typename Renderable>
 sf::Texture
 texture(const Renderable &)
 {
-        assert(not "Texture implementation");
+        static_assert(false, "No implementation");
+        return {};
 }
 
 template <typename Renderable>
