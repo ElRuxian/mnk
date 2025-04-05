@@ -4,6 +4,10 @@
 #include "view/game.hpp"
 #include <array>
 
+// FIXME: When the two players are AI, the game cannot be stopped until the end.
+//        Reason: on_new_turn_() calls itself over and over again from the gui
+//        callback until the game is over. Thus, the GUI event loop freezes.
+
 namespace mnkg::control {
 
 enum class player { human, ai };
