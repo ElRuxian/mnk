@@ -219,17 +219,17 @@ texture<game::style::go, stone>(const stone &stone)
         shape.setOrigin({ radius, radius }); // center
         auto center = sf::Vector2f(cell_viewport_size) / 2.f;
         shape.setPosition(center);
+        shape.setOutlineThickness(-radius / 10);
+        shape.setOutlineColor(sf::Color::Black);
         switch (stone.variant) {
         case 0:
                 shape.setFillColor(sf::Color::White);
-                shape.setOutlineThickness(-radius / 10);
-                shape.setOutlineColor(sf::Color::Black);
                 break;
         case 1:
-                shape.setFillColor(sf::Color::Black);
+                shape.setFillColor(sf::Color{ 15, 15, 15 });
                 break;
         default:
-                assert("Unrecognized stone variant");
+                assert(!"Unrecognized stone variant");
                 std::unreachable(); // test the code!
         }
         texture.clear(sf::Color::Transparent);
