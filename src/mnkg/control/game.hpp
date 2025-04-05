@@ -3,7 +3,6 @@
 #include "model/mnk/game.hpp"
 #include "view/game.hpp"
 #include <array>
-#include <print>
 
 namespace mnkg::control {
 
@@ -101,17 +100,9 @@ private:
                         const auto &line = win.line;
                         for (auto &cell : covered_cells(model_.board(), line))
                                 gui_.highlight_stone(cell);
-                        std::println("Player {} wins!", win.player);
-                        std::println("Line: {}\n", win.line);
-                } else {
-                        std::println("Tie!");
+                        gui_.set_selectable_cells({});
+                        return;
                 }
-                if (mcts_)
-                        std::println("MCTS simulated {} games in total.\n",
-                                     mcts_->simulations());
-                std::println("History: {}", history_);
-                gui_.set_selectable_cells({});
-                return;
         }
 };
 
