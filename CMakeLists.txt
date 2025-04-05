@@ -31,7 +31,10 @@ FetchContent_MakeAvailable(asio)
 set(ASIO_INCLUDE_DIR "${CMAKE_BINARY_DIR}/_deps/asio-src/asio/include")
 include_directories(${ASIO_INCLUDE_DIR})
 
-set(BUILD_SHARED_LIBS ON)
+set(BUILD_SHARED_LIBS OFF)
+
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++ -pthread")
+
 FetchContent_Declare(
     sfml
     GIT_REPOSITORY https://github.com/SFML/SFML.git
@@ -40,6 +43,9 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(sfml)
 set(SFML_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/_deps/sfml-src/include)
 include_directories(${SFML_INCLUDE_DIRS})
+add_definitions(-DSFML_STATIC)
+set(SFML_DIR "${CMAKE_BINARY_DIR}/_deps/sfml-src/lib/cmake/SFML")
+
 
 FetchContent_Declare(
     imgui
@@ -49,13 +55,11 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(imgui)
 set(IMGUI_DIR "${CMAKE_BINARY_DIR}/_deps/imgui-src")
 include_directories(${IMGUI_DIR})
-
-add_library(imgui STATIC 
+add_library(imgui STATIC
     ${IMGUI_DIR}/imgui.cpp
     ${IMGUI_DIR}/imgui_draw.cpp
     ${IMGUI_DIR}/imgui_widgets.cpp
     ${IMGUI_DIR}/imgui_tables.cpp
-    ${IMGUI_DIR}/imgui_demo.cpp
 )
 
 FetchContent_Declare(
@@ -63,6 +67,7 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/eliasdaler/imgui-sfml.git
     GIT_TAG master
 )
+option(IMGUI_SFML_FIND_SFML "Use find_package to find SFML" OFF)
 FetchContent_MakeAvailable(imgui-sfml)
 include_directories(${CMAKE_BINARY_DIR}/_deps/imgui-sfml-src)
 
