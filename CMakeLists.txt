@@ -33,8 +33,6 @@ include_directories(${ASIO_INCLUDE_DIR})
 
 set(BUILD_SHARED_LIBS OFF)
 
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++ -pthread")
-
 FetchContent_Declare(
     sfml
     GIT_REPOSITORY https://github.com/SFML/SFML.git

@@ -3,6 +3,7 @@
 This project consists of a game where two players take turns placing a stone on an m-by-n grid. The winner is the first player to align k stones of their own —horizontally, vertically, or diagonally.
 
 An ImGUI interface is provided to configure parameters such as:
+
 - board size (m and n);
 - winning line length (k);
 - "overline" validity: whether lines longer than k count as a win;
@@ -18,6 +19,12 @@ The game itself is rendered with Simple and Fast Multimedia Library (SFML). Huma
 
 ### Building
 
-A CMake build system is provided. Required dependencies are automatically fetched, built, and linked. All linking is done statically —except for OpenGL, as it is commonly found— to create a single, stand-alone executable.
+A CMake build system is provided.
+
+ImGui, ASIO, and SFML are automatically fetched, built, and statically linked.
+
+On Linux, essential system libraries such as OpenGL and the C++ standard library remain dynamically linked. The corresponding shared objects must be available for the executable to run.
+
+On Windows, all dependencies are statically linked to produce a fully standalone executable.
 
 Check [releases](https://github.com/ElRuxian/mnk/releases) for pre-built binaries.
