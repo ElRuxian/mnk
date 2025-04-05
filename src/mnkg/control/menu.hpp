@@ -198,7 +198,7 @@ public:
                                             1,
                                             max_line_lenght))
                                 game.line_length = std::clamp(
-                                    game.line_length, 1, max_line_lenght);
+                                    game.line_length, 2, max_line_lenght);
 
                         ImGui::AlignTextToFramePadding();
                         ImGui::Text("Style:");
