@@ -110,6 +110,7 @@ private:
                         std::println("MCTS simulated {} games in total.\n",
                                      mcts_->simulations());
                 std::println("History: {}", history_);
+                gui_.set_selectable_cells({});
                 return;
         }
 };
