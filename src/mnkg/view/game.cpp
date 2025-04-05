@@ -365,8 +365,25 @@ public:
                 assert(texture_index < textures_.stone.size());
                 sf::Sprite sprite(textures_.stone[texture_index]);
                 sprite.setPosition(board_.map_grid_to_view(cell_coords));
-                sprite.setColor(sf::Color(50, 255, 50));
-                renders_.game.draw(sprite);
+
+                const std::string shader_code = R"(
+uniform sampler2D texture;
+void main()
+{
+    vec4 texColor = texture2D(texture, gl_TexCoord[0].xy);
+    if (texColor.rgb == vec3(0.0)) {
+        gl_FragColor = texColor;
+    } else {
+        gl_FragColor = vec4(0.1, 1.0, 0.1, texColor.a);
+    }}
+)";
+
+                sf::Shader shader;
+                if (!shader.loadFromMemory(shader_code,
+                                           sf::Shader::Type::Fragment))
+                        throw std::runtime_error("Failed to load shader");
+
+                renders_.game.draw(sprite, &shader);
         }
 
         void
